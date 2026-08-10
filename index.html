@@ -1052,30 +1052,14 @@
 
     // --- PWA Offline Support (Inline Service Worker) ---
     if ('serviceWorker' in navigator) {
-      const swCode = `
-        const CACHE_NAME = 'wtp-cache-v1';
-        self.addEventListener('install', (e) => {
-          e.waitUntil(
-            caches.open(CACHE_NAME).then((cache) => {
-              // Cache the current page URL
-              return cache.addAll([location.pathname]);
-            })
-          );
-        });
-        self.addEventListener('fetch', (e) => {
-          e.respondWith(
-            caches.match(e.request).then((res) => {
-              return res || fetch(e.request);
-            })
-          );
-        });
-      `;
-      const blob = new Blob([swCode], { type: 'application/javascript' });
-      const swUrl = URL.createObjectURL(blob);
-      navigator.serviceWorker.register(swUrl).then(() => {
-        console.log('✅ Service Worker 註冊成功，支援離線模式 (Offline Mode)！');
-      }).catch((err) => {
-        console.error('Service Worker 註冊失敗:', err);
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => {
+            console.log('✅ PWA Service Worker 註冊成功！', reg.scope);
+          })
+          .catch((err) => {
+            console.error('❌ Service Worker 註冊失敗:', err);
+          });
       });
     }
 
