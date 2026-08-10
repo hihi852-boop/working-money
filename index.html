@@ -6,89 +6,127 @@
     <title>開工計 WorkTime Pay</title>
     <style>
         :root {
-            --bg-color: #f7f7f9;
+            --primary: #03A9F4;
+            --bg-color: #E3F2FD;
             --card-bg: #ffffff;
             --accent-green: #34c759;
             --accent-green-light: #e8f8ec;
-            --text-main: #1c1c1e;
-            --text-muted: #8e8e93;
-            --border-color: #e5e5ea;
+            --text-main: #01579B;
+            --text-muted: #666666;
+            --border-color: #e1f5fe;
             --danger-color: #ff3b30;
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
             margin: 0;
-            padding: 0;
+            padding: 20px 16px 100px 16px;
             color: var(--text-main);
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* 📱 主畫面比例調校 */
-        .main-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            min-height: 100vh;
-            padding: 20px 24px 40px 24px;
-            box-sizing: border-box;
-            background-color: #f9f9fb;
+        /* 🔵 1. 藍色大標題 Header (跟足《追數易》風格) */
+        .header {
+            background: linear-gradient(135deg, #03A9F4, #81D4FA);
+            padding: 25px 20px;
+            border-radius: 25px;
+            color: white;
+            text-align: center;
+            margin-bottom: 18px;
+            box-shadow: 0 4px 15px rgba(3, 169, 244, 0.2);
+            position: relative;
         }
 
-        .header-bar {
-            width: 100%;
+        .header h1 {
+            margin: 0;
+            font-size: 1.4rem;
             display: flex;
-            justify-content: flex-end;
-            padding-top: 10px;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .header-alert {
+            color: #f4b400;
+            font-weight: bold;
+            font-size: 0.82rem;
+            margin: 12px 0 0 0;
+            line-height: 1.4;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
         .gear-btn {
-            background: none;
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            background: rgba(255,255,255,0.25);
             border: none;
-            font-size: 1.4rem;
-            color: var(--text-muted);
+            font-size: 1.2rem;
+            color: white;
             cursor: pointer;
-            padding: 5px;
-            transition: opacity 0.2s;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .gear-btn:active {
-            opacity: 0.5;
+        /* ⚪ 2. 白色圓角方格包住 (glass-card) */
+        .glass-card {
+            background: var(--card-bg);
+            border-radius: 22px;
+            padding: 18px;
+            margin-bottom: 18px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            width: 100%;
         }
 
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary);
+            padding-left: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 📈 跳動金額區域 */
         .display-container {
             text-align: center;
-            margin-top: -30px;
-            width: 100%;
+            padding: 10px 0 5px 0;
         }
 
         .earnings-label {
             font-size: 0.8rem;
             font-weight: 600;
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
             color: var(--text-muted);
-            margin-bottom: 12px;
-            text-transform: uppercase;
+            margin-bottom: 8px;
         }
 
-        /* 📈 跳動數字與等寬對齊 */
         .earnings-amount {
-            font-size: 3.4rem;
+            font-size: 3.1rem;
             font-weight: 800;
-            letter-spacing: -1.5px;
-            margin: 0 0 10px 0;
+            letter-spacing: -1px;
+            margin: 0 0 8px 0;
             font-variant-numeric: tabular-nums;
-            color: var(--text-main);
-            transition: transform 0.05s ease;
+            color: #111111;
+            word-break: break-all;
         }
 
         .sub-time {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--text-muted);
-            margin-bottom: 16px;
-            font-weight: 400;
+            margin-bottom: 14px;
         }
 
         .status-pill {
@@ -103,74 +141,51 @@
             font-weight: 600;
         }
 
-        .status-pill.lunch {
-            background-color: #fff4e5;
-            color: #ff9500;
-        }
+        .status-pill.lunch { background-color: #fff4e5; color: #ff9500; }
+        .status-pill.off { background-color: #f0f0f0; color: #8e8e93; }
 
-        .status-pill.off {
-            background-color: #e5e5ea;
-            color: #8e8e93;
-        }
-
-        /* ☕ 返工即時記帳 卡片 */
-        .expense-card {
+        /* 🛠️ 3. 比例修復：網格佈局 (防止爆邊) */
+        .expense-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
             width: 100%;
-            max-width: 400px;
-            background: var(--card-bg);
-            border-radius: 22px;
-            padding: 18px 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-            box-sizing: border-box;
-            border: 1px solid rgba(0,0,0,0.03);
         }
 
-        .expense-title {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            font-weight: 600;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .expense-input-row {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .expense-input-row input, .expense-input-row select {
-            border: 1px solid var(--border-color);
-            background: #f8f8fa;
+        .expense-form-grid input,
+        .expense-form-grid select {
+            width: 100%;
+            padding: 12px;
             border-radius: 12px;
-            padding: 10px 12px;
-            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
+            background: #f1f8fc;
+            font-size: 0.95rem;
             outline: none;
-            box-sizing: border-box;
-            font-family: inherit;
+            color: #333;
         }
-
-        .expense-input-row input[type="text"] { flex: 2; }
-        .expense-input-row input[type="number"] { flex: 1.2; }
-        .exp-method-select { flex: 1.5; background-color: #e9e9eb !important; border: none !important; font-weight: 500; }
 
         .btn-add-exp {
+            grid-column: span 2;
             background: var(--accent-green);
             color: white;
             border: none;
             border-radius: 12px;
-            padding: 0 16px;
+            padding: 12px;
             font-weight: bold;
+            font-size: 1rem;
             cursor: pointer;
-            font-size: 0.9rem;
-            flex: 1;
+            box-shadow: 0 3px 0 #28a745;
+        }
+
+        .btn-add-exp:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #28a745;
         }
 
         .expense-list {
             margin-top: 10px;
-            max-height: 110px;
+            max-height: 140px;
             overflow-y: auto;
             font-size: 0.85rem;
         }
@@ -179,20 +194,20 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 7px 0;
-            border-bottom: 1px solid #f0f0f5;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
         }
 
-        .pay-tag {
-            font-size: 0.75rem;
-            background: #e5e5ea;
-            color: #555;
+        .expense-tag {
+            background: #e1f5fe;
+            color: var(--primary);
             padding: 2px 6px;
             border-radius: 6px;
-            margin-left: 6px;
+            font-size: 0.75rem;
+            margin-right: 6px;
         }
 
-        /* ⚙️ 設定頁 Overlay (iOS 原生風格) */
+        /* ⚙️ 設定頁 Overlay */
         .settings-overlay {
             position: fixed;
             top: 0;
@@ -211,102 +226,86 @@
             justify-content: space-between;
             align-items: center;
             padding: 16px 20px;
-            background: var(--bg-color);
+            background: var(--primary);
+            color: white;
             position: sticky;
             top: 0;
             z-index: 10;
         }
 
-        .settings-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-        }
-
-        .btn-done {
-            background: none;
-            border: none;
-            color: #007aff;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-        }
+        .settings-title { font-size: 1.1rem; font-weight: 700; }
+        .btn-done { background: none; border: none; color: white; font-size: 1rem; font-weight: 600; cursor: pointer; }
 
         .section-title {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            margin: 18px 25px 8px 25px;
-            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            margin: 18px 20px 8px 20px;
+            font-weight: 700;
         }
 
         .settings-group {
             background: var(--card-bg);
-            border-radius: 16px;
-            margin: 0 20px 10px 20px;
-            overflow: hidden;
+            border-radius: 18px;
+            margin: 0 16px 12px 16px;
+            padding: 6px 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
         }
 
         .settings-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-color);
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
             font-size: 0.95rem;
         }
 
-        .settings-row:last-child {
-            border-bottom: none;
-        }
-
-        .settings-row select, .settings-row input {
-            border: none;
-            background: none;
-            font-size: 0.95rem;
-            text-align: right;
+        .settings-row:last-child { border-bottom: none; }
+        .settings-row select, .settings-row input[type="number"], .settings-row input[type="time"] {
+            border: 1px solid var(--border-color);
+            background: #f1f8fc;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
             outline: none;
             color: #007aff;
-            font-family: inherit;
+            text-align: right;
         }
 
-        .time-picker-box {
-            background: #e9e9eb;
-            padding: 4px 10px;
-            border-radius: 8px;
-            color: var(--text-main) !important;
-        }
-
-        /* 工作日按鈕粒 (M T W T F S S) */
-        .days-selector {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 16px;
-            background: var(--card-bg);
-        }
-
+        /* 工作日按鈕粒 */
+        .days-selector { display: flex; justify-content: space-between; padding: 10px 0; }
         .day-circle {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: #e5e5ea;
-            color: #8e8e93;
-            display: flex;
+            width: 36px; height: 36px; border-radius: 50%;
+            background: #e5e5ea; color: #8e8e93;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none;
+        }
+        .day-circle.active { background: var(--primary); color: white; }
+
+        /* 自訂支付方式管理列表 */
+        .pay-method-chip {
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
+            background: #e1f5fe;
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: 12px;
+            margin: 4px;
             font-size: 0.85rem;
             font-weight: 600;
-            cursor: pointer;
-            border: none;
         }
-
-        .day-circle.active {
-            background: var(--accent-green);
-            color: white;
+        .pay-method-chip button {
+            background: none;
+            border: none;
+            color: #ff3b30;
+            margin-left: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
         }
 
         .btn-export-csv {
             width: 100%;
-            background: #007aff;
+            background: var(--primary);
             color: white;
             border: none;
             padding: 14px;
@@ -314,21 +313,19 @@
             font-size: 0.95rem;
             font-weight: bold;
             cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .btn-export-csv:active {
-            opacity: 0.8;
+            box-shadow: 0 3px 0 #0288D1;
         }
     </style>
 </head>
 <body>
 
-    <div class="main-screen">
-        <div class="header-bar">
-            <button class="gear-btn" onclick="openSettings()">⚙️</button>
-        </div>
+    <div class="header">
+        <h1>💸 開工計 v1.0</h1>
+        <button class="gear-btn" onclick="openSettings()">⚙️</button>
+        <p class="header-alert">⚠️ 記得定時匯出 CSV 備份數據呀！因為如果你手痕去 Setting 清理咗 Browser 嘅快取，數據會消失</p>
+    </div>
 
+    <div class="glass-card">
         <div class="display-container">
             <div class="earnings-label">今日已賺取</div>
             <div class="earnings-amount" id="displayEarnings">HK$0.00</div>
@@ -337,39 +334,35 @@
                 <span id="statusDot">🟢</span> <span id="statusText">上班中</span>
             </div>
         </div>
+    </div>
 
-        <div class="expense-card">
-            <div class="expense-title">
-                <span>返工即時記帳</span>
-                <span id="netEarningsText" style="color:var(--accent-green)">淨賺: HK$0.0</span>
-            </div>
-            <div class="expense-input-row">
-                <input type="text" id="expReason" placeholder="項目 (如: 買咖啡)">
-                <input type="number" id="expAmt" placeholder="$金額">
-            </div>
-            <div class="expense-input-row">
-                <select id="expMethod" class="exp-method-select">
-                    <option value="八達通">🐙 八達通</option>
-                    <option value="現金">💵 現金</option>
-                    <option value="信用卡">💳 信用卡</option>
-                    <option value="PayMe">🔴 PayMe</option>
-                    <option value="Alipay">🔵 支付寶</option>
-                    <option value="WeChat">🟢 微信支付</option>
-                </select>
-                <button class="btn-add-exp" onclick="addQuickExpense()">扣減入帳</button>
-            </div>
-            <div class="expense-list" id="expenseList"></div>
+    <div class="glass-card">
+        <div class="card-title">
+            <span>☕ 返工即時記帳</span>
+            <span id="netEarningsText" style="color:var(--accent-green)">淨賺: HK$0.0</span>
         </div>
+
+        <div class="expense-form-grid">
+            <input type="text" id="expReason" placeholder="項目 (如: 買咖啡)">
+            <input type="number" id="expAmt" placeholder="金額 HKD $">
+            
+            <select id="expPayMethod">
+                </select>
+            
+            <button class="btn-add-exp" onclick="addQuickExpense()">扣減入帳</button>
+        </div>
+
+        <div class="expense-list" id="expenseList"></div>
     </div>
 
     <div class="settings-overlay" id="settingsOverlay">
         <div class="settings-header">
             <div></div>
-            <div class="settings-title">設定</div>
+            <div class="settings-title">設定與管理</div>
             <button class="btn-done" onclick="closeSettings()">完成</button>
         </div>
 
-        <div class="section-title">薪金設定</div>
+        <div class="section-title">💰 薪金設定</div>
         <div class="settings-group">
             <div class="settings-row">
                 <span>計薪方式</span>
@@ -385,27 +378,27 @@
             </div>
         </div>
 
-        <div class="section-title">工作時間與放飯</div>
+        <div class="section-title">⏰ 工作時間與放飯</div>
         <div class="settings-group">
             <div class="settings-row">
                 <span>開工時間</span>
-                <input type="time" class="time-picker-box" id="cfgStartTime" value="09:00" onchange="saveConfig()">
+                <input type="time" id="cfgStartTime" value="09:00" onchange="saveConfig()">
             </div>
             <div class="settings-row">
                 <span>收工時間</span>
-                <input type="time" class="time-picker-box" id="cfgEndTime" value="18:00" onchange="saveConfig()">
+                <input type="time" id="cfgEndTime" value="18:00" onchange="saveConfig()">
             </div>
             <div class="settings-row">
                 <span>午休開始</span>
-                <input type="time" class="time-picker-box" id="cfgLunchStart" value="12:30" onchange="saveConfig()">
+                <input type="time" id="cfgLunchStart" value="12:30" onchange="saveConfig()">
             </div>
             <div class="settings-row">
                 <span>午休結束</span>
-                <input type="time" class="time-picker-box" id="cfgLunchEnd" value="13:30" onchange="saveConfig()">
+                <input type="time" id="cfgLunchEnd" value="13:30" onchange="saveConfig()">
             </div>
         </div>
 
-        <div class="section-title">工作日設定</div>
+        <div class="section-title">🗓️ 工作日設定</div>
         <div class="settings-group">
             <div class="days-selector">
                 <button class="day-circle active" data-day="1" onclick="toggleWorkDay(this)">一</button>
@@ -418,9 +411,20 @@
             </div>
         </div>
 
-        <div class="section-title">數據匯出</div>
-        <div style="padding: 0 20px 30px 20px;">
-            <button class="btn-export-csv" onclick="exportToAccEasyCSV()">📤 匯出今日數據至《記數易》(CSV)</button>
+        <div class="section-title">💳 自訂支付方式名稱</div>
+        <div class="settings-group">
+            <div style="padding: 10px 0;">
+                <div id="payMethodList"></div>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                    <input type="text" id="newPayMethod" placeholder="新增 (例: 八達通 / PayMe)" style="flex:1; padding:8px; border-radius:8px; border:1px solid #ccc;">
+                    <button onclick="addPayMethod()" style="background:var(--primary); color:white; border:none; border-radius:8px; padding:0 15px; font-weight:bold;">加</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">📤 數據匯出</div>
+        <div style="padding: 0 16px 30px 16px;">
+            <button class="btn-export-csv" onclick="exportToAccEasyCSV()">匯出今日數據至《記數易》(CSV)</button>
         </div>
     </div>
 
@@ -433,7 +437,8 @@
             endTime: '18:00',
             lunchStart: '12:30',
             lunchEnd: '13:30',
-            workDays: [1, 2, 3, 4, 5] // 1=Mon, ..., 0=Sun
+            workDays: [1, 2, 3, 4, 5],
+            payMethods: ['🐙 八達通', '💵 現金', '💳 信用卡', '📱 PayMe']
         };
 
         let todayExpenses = JSON.parse(localStorage.getItem('WorkTimePay_TodayExpenses')) || [];
@@ -454,6 +459,8 @@
                 const day = parseInt(btn.dataset.day);
                 btn.classList.toggle('active', config.workDays.includes(day));
             });
+
+            renderPayMethodsUI();
         }
 
         function saveConfig() {
@@ -470,10 +477,39 @@
         function toggleWorkDay(btn) {
             const day = parseInt(btn.dataset.day);
             btn.classList.toggle('active');
-            
-            const activeDays = Array.from(document.querySelectorAll('.day-circle.active')).map(b => parseInt(b.dataset.day));
-            config.workDays = activeDays;
+            config.workDays = Array.from(document.querySelectorAll('.day-circle.active')).map(b => parseInt(b.dataset.day));
             saveConfig();
+        }
+
+        /* 💳 自訂支付方式管理邏輯 */
+        function renderPayMethodsUI() {
+            const list = document.getElementById('payMethodList');
+            const select = document.getElementById('expPayMethod');
+            list.innerHTML = '';
+            select.innerHTML = '';
+
+            config.payMethods.forEach((m, idx) => {
+                list.innerHTML += `<div class="pay-method-chip">${m}<button onclick="deletePayMethod(${idx})">✕</button></div>`;
+                select.innerHTML += `<option value="${m}">${m}</option>`;
+            });
+        }
+
+        function addPayMethod() {
+            const input = document.getElementById('newPayMethod');
+            const val = input.value.trim();
+            if (val) {
+                config.payMethods.push(val);
+                input.value = '';
+                saveConfig();
+                renderPayMethodsUI();
+            }
+        }
+
+        function deletePayMethod(idx) {
+            if (config.payMethods.length <= 1) return alert('最少保留一個支付方式！');
+            config.payMethods.splice(idx, 1);
+            saveConfig();
+            renderPayMethodsUI();
         }
 
         function timeToSeconds(timeStr) {
@@ -481,7 +517,7 @@
             return h * 3600 + m * 60;
         }
 
-        // 📈 實時平滑跳動計數器 (30毫秒高清渲染)
+        /* 📈 跳動計算器 */
         function updateCounter() {
             const now = new Date();
             const currentDay = now.getDay();
@@ -495,79 +531,50 @@
             const lunchDuration = Math.max(0, lunchEndSec - lunchStartSec);
             const totalWorkSec = Math.max(1, (endSec - startSec) - lunchDuration);
 
-            // 每秒跳錢率
             let ratePerSec = 0;
-            if (config.salaryMode === 'hourly') {
-                ratePerSec = config.salaryAmt / 3600;
-            } else if (config.salaryMode === 'daily') {
-                ratePerSec = config.salaryAmt / totalWorkSec;
-            } else if (config.salaryMode === 'monthly') {
-                ratePerSec = config.salaryAmt / (21.75 * totalWorkSec);
-            }
+            if (config.salaryMode === 'hourly') ratePerSec = config.salaryAmt / 3600;
+            else if (config.salaryMode === 'daily') ratePerSec = config.salaryAmt / totalWorkSec;
+            else if (config.salaryMode === 'monthly') ratePerSec = config.salaryAmt / (21.75 * totalWorkSec);
 
             const isWorkDay = config.workDays.includes(currentDay);
             let elapsedWorkSec = 0;
             let status = 'off';
             let statusLabel = '非工作時間';
 
-            if (!isWorkDay) {
-                status = 'off';
-                statusLabel = '放假中 🏖️';
-            } else if (currentSec < startSec) {
-                status = 'off';
-                statusLabel = '未開工 ⏳';
-            } else if (currentSec >= endSec) {
-                status = 'off';
-                statusLabel = '已收工 🎉';
-                elapsedWorkSec = totalWorkSec;
-            } else {
-                // 返工時間內
+            if (!isWorkDay) { status = 'off'; statusLabel = '放假中 🏖️'; }
+            else if (currentSec < startSec) { status = 'off'; statusLabel = '未開工 ⏳'; }
+            else if (currentSec >= endSec) { status = 'off'; statusLabel = '已收工 🎉'; elapsedWorkSec = totalWorkSec; }
+            else {
                 if (currentSec >= lunchStartSec && currentSec < lunchEndSec) {
-                    status = 'lunch';
-                    statusLabel = '午休中 🍱';
-                    elapsedWorkSec = lunchStartSec - startSec;
+                    status = 'lunch'; statusLabel = '午休中 🍱'; elapsedWorkSec = lunchStartSec - startSec;
                 } else if (currentSec >= lunchEndSec) {
-                    status = 'working';
-                    statusLabel = '上班中 🟢';
-                    elapsedWorkSec = (currentSec - startSec) - lunchDuration;
+                    status = 'working'; statusLabel = '上班中 🟢'; elapsedWorkSec = (currentSec - startSec) - lunchDuration;
                 } else {
-                    status = 'working';
-                    statusLabel = '上班中 🟢';
-                    elapsedWorkSec = currentSec - startSec;
+                    status = 'working'; statusLabel = '上班中 🟢'; elapsedWorkSec = currentSec - startSec;
                 }
             }
 
             currentEarned = elapsedWorkSec * ratePerSec;
-            
-            // 更新跳動畫面
             document.getElementById('displayEarnings').innerText = `HK$${currentEarned.toFixed(2)}`;
             document.getElementById('displaySubTime').innerText = `自 ${config.startTime} 起`;
 
-            // 更新 Pill 標籤
             const pill = document.getElementById('statusPill');
-            const dot = document.getElementById('statusDot');
-            const text = document.getElementById('statusText');
-
             pill.className = `status-pill ${status}`;
-            text.innerText = statusLabel;
-            if (status === 'working') dot.innerText = '🟢';
-            else if (status === 'lunch') dot.innerText = '🍱';
-            else dot.innerText = '🏖️';
+            document.getElementById('statusText').innerText = statusLabel;
+            document.getElementById('statusDot').innerText = status === 'working' ? '🟢' : (status === 'lunch' ? '🍱' : '🏖️');
 
-            // 即時淨賺
             const totalExp = todayExpenses.reduce((sum, e) => sum + e.amt, 0);
-            const netEarned = currentEarned - totalExp;
-            document.getElementById('netEarningsText').innerText = `淨賺: HK$${netEarned.toFixed(1)}`;
+            document.getElementById('netEarningsText').innerText = `淨賺: HK$${(currentEarned - totalExp).toFixed(1)}`;
         }
 
-        // ☕ 快捷記帳功能 (包含支付方式)
+        /* ☕ 即時記帳功能 */
         function addQuickExpense() {
             const reason = document.getElementById('expReason').value || '返工消費';
             const amt = parseFloat(document.getElementById('expAmt').value);
-            const method = document.getElementById('expMethod').value;
+            const payMethod = document.getElementById('expPayMethod').value;
             if (!amt) return;
 
-            todayExpenses.push({ reason, amt, method, time: new Date().toLocaleTimeString() });
+            todayExpenses.push({ reason, amt, payMethod, time: new Date().toLocaleTimeString() });
             localStorage.setItem('WorkTimePay_TodayExpenses', JSON.stringify(todayExpenses));
 
             document.getElementById('expReason').value = '';
@@ -579,27 +586,18 @@
             const list = document.getElementById('expenseList');
             list.innerHTML = '';
             todayExpenses.forEach(e => {
-                const methodTag = e.method ? `<span class="pay-tag">${e.method}</span>` : '';
-                list.innerHTML += `<div class="expense-item"><span>${e.reason} ${methodTag}</span><span style="color:var(--danger-color)">-$${e.amt}</span></div>`;
+                list.innerHTML += `<div class="expense-item"><div><span class="expense-tag">${e.payMethod || '預設'}</span>${e.reason}</div><span style="color:var(--danger-color); font-weight:bold;">-$${e.amt}</span></div>`;
             });
         }
 
-        // 📤 匯出至《記數易》格式 (CSV) - 包含支付方式標記
+        /* 📤 匯出 CSV */
         function exportToAccEasyCSV() {
             const todayStr = new Date().toISOString().split('T')[0];
             let csvContent = "\uFEFF內容,金額,日期\n";
-
-            // 加入今日薪金
-            if (currentEarned > 0) {
-                csvContent += `工作薪金 (今日結算),${currentEarned.toFixed(1)},${todayStr}\n`;
-            }
-
-            // 加入今日返工消費 (把支付方式附在項目名稱後)
+            if (currentEarned > 0) csvContent += `工作薪金 (今日結算),${currentEarned.toFixed(1)},${todayStr}\n`;
             todayExpenses.forEach(e => {
-                const methodStr = e.method ? ` [${e.method}]` : '';
-                csvContent += `[返工] ${e.reason}${methodStr},-${e.amt},${todayStr}\n`;
+                csvContent += `[${e.payMethod || '返工'}] ${e.reason},-${e.amt},${todayStr}\n`;
             });
-
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
@@ -607,7 +605,6 @@
             link.click();
         }
 
-        // 啟動主流程
         loadConfigToUI();
         renderExpenses();
         setInterval(updateCounter, 30);
