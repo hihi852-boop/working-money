@@ -253,13 +253,13 @@
       color: var(--danger);
     }
 
-    /* List View for Expenses */
+    /* List View for Expenses & Breaks */
     .expense-list {
       display: flex;
       flex-direction: column;
       gap: 8px;
       margin-top: 12px;
-      max-height: 200px;
+      max-height: 250px;
       overflow-y: auto;
     }
 
@@ -291,6 +291,16 @@
       font-weight: 700;
       color: var(--danger);
       font-variant-numeric: tabular-nums;
+    }
+
+    .break-item {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #FAFAFC;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
     }
 
     /* Bottom Navigation */
@@ -343,13 +353,6 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
-    }
-
-    .toggle-group {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 0;
     }
 
     .switch {
@@ -457,6 +460,14 @@
           <div id="todayExpense" class="stat-value spent">$0.00</div>
         </div>
       </div>
+
+      <!-- 開支紀錄 (搬咗去主畫面) -->
+      <div class="card">
+        <h3 style="font-size: 16px;">📋 今日開支紀錄</h3>
+        <div id="expenseList" class="expense-list">
+          <!-- Expense items will populate here -->
+        </div>
+      </div>
     </div>
 
     <!-- TAB 2: Work Expense Logger -->
@@ -472,11 +483,7 @@
             <div style="flex: 1;">
               <label>支付方式</label>
               <select id="expensePayment">
-                <option value="八達通">八達通</option>
-                <option value="PayMe">PayMe</option>
-                <option value="現金">現金</option>
-                <option value="信用卡">信用卡</option>
-                <option value="其他">其他</option>
+                <!-- 將由 JS 動態生成 -->
               </select>
             </div>
             <div style="flex: 1.5;">
@@ -486,13 +493,6 @@
           </div>
           <button type="submit" class="btn">記帳落袋</button>
         </form>
-      </div>
-
-      <div class="card">
-        <h3 style="font-size: 16px;">📋 今日開支紀錄</h3>
-        <div id="expenseList" class="expense-list">
-          <!-- Expense items will populate here -->
-        </div>
       </div>
     </div>
 
@@ -539,23 +539,21 @@
           </div>
         </div>
 
-        <div class="toggle-group">
-          <span>啟用午休凍結 (Lunch Break)</span>
-          <label class="switch">
-            <input type="checkbox" id="lunchToggle" checked>
-            <span class="slider"></span>
-          </label>
+        <!-- 自訂多重休息時段 -->
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <label style="margin: 0;">休息時段 (自動暫停跳錢)</label>
+            <button id="addBreakBtn" type="button" class="btn btn-secondary" style="padding: 4px 10px; width: auto; font-size: 12px; font-weight: 600;">+ 新增</button>
+          </div>
+          <div id="breaksContainer" style="display:flex; flex-direction:column; gap:8px;">
+            <!-- Break Items will populate here -->
+          </div>
         </div>
 
-        <div class="input-row form-group" id="lunchTimeInputs">
-          <div>
-            <label>午休開始</label>
-            <input type="time" id="lunchStart" value="12:00">
-          </div>
-          <div>
-            <label>午休結束</label>
-            <input type="time" id="lunchEnd" value="13:00">
-          </div>
+        <!-- 自訂支付方式 -->
+        <div class="form-group" style="margin-top: 20px;">
+          <label>自訂支付方式 (用逗號分隔)</label>
+          <input type="text" id="paymentMethodsInput" placeholder="八達通,PayMe,現金...">
         </div>
 
         <div class="form-group">
@@ -607,13 +605,29 @@
       workStart: '09:00',
       workEnd: '18:00',
       workDays: [1, 2, 3, 4, 5],
-      lunchEnabled: true,
-      lunchStart: '12:00',
-      lunchEnd: '13:00',
-      decimalPlaces: 2
+      decimalPlaces: 2,
+      breaks: [
+        { id: 'b1', start: '12:00', end: '13:00', enabled: true }
+      ],
+      paymentMethods: ['八達通', 'PayMe', '現金', '信用卡', '其他']
     };
 
-    let config = JSON.parse(localStorage.getItem('wtp_config')) || defaultConfig;
+    // Load & migrate config
+    let savedConfig = JSON.parse(localStorage.getItem('wtp_config'));
+    
+    // Migration from old single-lunch version to multi-breaks
+    if (savedConfig && savedConfig.lunchEnabled !== undefined) {
+      savedConfig.breaks = [{ id: 'b1', start: savedConfig.lunchStart || '12:00', end: savedConfig.lunchEnd || '13:00', enabled: savedConfig.lunchEnabled }];
+      delete savedConfig.lunchEnabled;
+      delete savedConfig.lunchStart;
+      delete savedConfig.lunchEnd;
+    }
+    
+    let config = { ...defaultConfig, ...savedConfig };
+    // Ensure arrays exist for legacy users
+    if (!config.breaks) config.breaks = defaultConfig.breaks;
+    if (!config.paymentMethods) config.paymentMethods = defaultConfig.paymentMethods;
+    
     let expenses = JSON.parse(localStorage.getItem('wtp_expenses')) || [];
 
     // Helper functions
@@ -627,7 +641,6 @@
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
-    // Save state
     function saveConfig() {
       localStorage.setItem('wtp_config', JSON.stringify(config));
     }
@@ -636,31 +649,37 @@
       localStorage.setItem('wtp_expenses', JSON.stringify(expenses));
     }
 
-    // Calculations
-    function calculateRates() {
+    // Advanced Break Calculation Logic
+    function getValidBreaks() {
       const startSec = parseTime(config.workStart);
       const endSec = parseTime(config.workEnd);
-      let totalWorkSec = Math.max(0, endSec - startSec);
+      return config.breaks
+        .filter(b => b.enabled)
+        .map(b => ({ start: parseTime(b.start), end: parseTime(b.end) }))
+        .filter(b => b.start >= startSec && b.end <= endSec && b.end > b.start)
+        .sort((a, b) => a.start - b.start);
+    }
 
-      if (config.lunchEnabled) {
-        const lStart = parseTime(config.lunchStart);
-        const lEnd = parseTime(config.lunchEnd);
-        const lunchDuration = Math.max(0, lEnd - lStart);
-        totalWorkSec = Math.max(0, totalWorkSec - lunchDuration);
+    function getWorkedSeconds(currentTimeSec, startSec, endSec, validBreaks) {
+      if (currentTimeSec <= startSec) return 0;
+      let worked = 0;
+      let currentPos = startSec;
+      let cappedTime = Math.min(currentTimeSec, endSec);
+
+      for (let b of validBreaks) {
+        if (cappedTime >= b.end) {
+          worked += Math.max(0, b.start - currentPos);
+          currentPos = b.end;
+        } else if (cappedTime >= b.start && cappedTime < b.end) {
+          worked += Math.max(0, b.start - currentPos);
+          currentPos = cappedTime;
+          break;
+        } else {
+          break; // Break is in the future
+        }
       }
-
-      let dailySalary = 0;
-      if (config.salaryType === 'monthly') {
-        // Average ~21.75 working days per month
-        dailySalary = config.salaryAmount / 21.75;
-      } else if (config.salaryType === 'daily') {
-        dailySalary = config.salaryAmount;
-      } else if (config.salaryType === 'hourly') {
-        dailySalary = config.salaryAmount * (totalWorkSec / 3600);
-      }
-
-      const ratePerSecond = totalWorkSec > 0 ? dailySalary / totalWorkSec : 0;
-      return { dailySalary, ratePerSecond, totalWorkSec, startSec, endSec };
+      worked += Math.max(0, cappedTime - currentPos);
+      return worked;
     }
 
     // Core Render Ticker Loop (Runs every ~30ms)
@@ -669,55 +688,57 @@
       const currentDay = now.getDay();
       const currentSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds() + now.getMilliseconds() / 1000;
 
-      const { dailySalary, ratePerSecond, totalWorkSec, startSec, endSec } = calculateRates();
+      const startSec = parseTime(config.workStart);
+      const endSec = parseTime(config.workEnd);
+      const validBreaks = getValidBreaks();
+      
+      const totalWorkSec = getWorkedSeconds(endSec, startSec, endSec, validBreaks);
+
+      let dailySalary = 0;
+      if (config.salaryType === 'monthly') {
+        dailySalary = config.salaryAmount / 21.75; // Approx working days
+      } else if (config.salaryType === 'daily') {
+        dailySalary = config.salaryAmount;
+      } else if (config.salaryType === 'hourly') {
+        dailySalary = config.salaryAmount * (totalWorkSec / 3600);
+      }
+
+      const ratePerSecond = totalWorkSec > 0 ? dailySalary / totalWorkSec : 0;
 
       const badge = document.getElementById('statusBadge');
       const statusText = document.getElementById('statusText');
 
       let grossEarned = 0;
-      let isWorking = false;
-      let isResting = false;
-
       const isWorkDay = config.workDays.includes(currentDay);
+
+      // Check if currently resting in ANY active break
+      let isCurrentlyResting = false;
+      for (let b of validBreaks) {
+        if (currentSec >= b.start && currentSec < b.end) {
+          isCurrentlyResting = true;
+          break;
+        }
+      }
 
       if (!isWorkDay) {
         badge.className = 'status-badge off';
         statusText.innerText = '休假中';
-        grossEarned = 0;
       } else if (currentSec < startSec) {
         badge.className = 'status-badge off';
         statusText.innerText = '未開工';
-        grossEarned = 0;
       } else if (currentSec >= endSec) {
         badge.className = 'status-badge off';
         statusText.innerText = '已收工';
-        grossEarned = dailySalary;
+      } else if (isCurrentlyResting) {
+        badge.className = 'status-badge resting';
+        statusText.innerText = '休息中 ☕';
       } else {
-        // Inside working hours
-        let lStart = config.lunchEnabled ? parseTime(config.lunchStart) : -1;
-        let lEnd = config.lunchEnabled ? parseTime(config.lunchEnd) : -1;
+        badge.className = 'status-badge working';
+        statusText.innerText = '上班中 🔥';
+      }
 
-        if (config.lunchEnabled && currentSec >= lStart && currentSec < lEnd) {
-          // Resting inside lunch time
-          badge.className = 'status-badge resting';
-          statusText.innerText = '午休中';
-          isResting = true;
-
-          // Freeze earned salary at lunch start time
-          let activeSec = Math.max(0, lStart - startSec);
-          grossEarned = activeSec * ratePerSecond;
-        } else {
-          // Active working time
-          badge.className = 'status-badge working';
-          statusText.innerText = '上班中 🔥';
-          isWorking = true;
-
-          let elapsedSec = currentSec - startSec;
-          if (config.lunchEnabled && currentSec >= lEnd) {
-            elapsedSec -= (lEnd - lStart);
-          }
-          grossEarned = Math.max(0, elapsedSec) * ratePerSecond;
-        }
+      if (isWorkDay) {
+        grossEarned = getWorkedSeconds(currentSec, startSec, endSec, validBreaks) * ratePerSecond;
       }
 
       // Calculate Expenses Today
@@ -737,12 +758,10 @@
 
       // Workday Progress Bar Calculation
       let progressPct = 0;
-      if (isWorkDay) {
+      if (isWorkDay && endSec > startSec) {
         if (currentSec >= endSec) progressPct = 100;
         else if (currentSec > startSec) {
-          let worked = currentSec - startSec;
-          let totalSpan = endSec - startSec;
-          progressPct = Math.min(100, Math.max(0, (worked / totalSpan) * 100));
+          progressPct = Math.min(100, Math.max(0, ((currentSec - startSec) / (endSec - startSec)) * 100));
         }
       }
       document.getElementById('progressPercent').innerText = `${progressPct.toFixed(1)}%`;
@@ -752,7 +771,7 @@
     // Expenses UI Logic
     function renderExpenseList() {
       const todayKey = getTodayKey();
-      const listEl = document.getElementById('expenseList');
+      const listEl = document.getElementById('expenseList'); // Now on dashboard tab
       const todayItems = expenses.filter(item => item.date === todayKey);
 
       if (todayItems.length === 0) {
@@ -760,7 +779,7 @@
         return;
       }
 
-      listEl.innerHTML = todayItems.map((item, idx) => `
+      listEl.innerHTML = todayItems.map((item) => `
         <div class="expense-item">
           <div class="expense-info">
             <span class="expense-title">${item.note || item.payment}</span>
@@ -768,7 +787,7 @@
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
             <span class="expense-amount">-$${item.amount.toFixed(2)}</span>
-            <span style="color:#FF3B30; cursor:pointer; font-size:12px;" onclick="deleteExpense('${item.id}')">✕</span>
+            <button style="color:#FF3B30; background:none; border:none; padding:4px; font-size:16px; cursor:pointer;" onclick="deleteExpense('${item.id}')">✕</button>
           </div>
         </div>
       `).join('');
@@ -778,6 +797,12 @@
       expenses = expenses.filter(item => item.id !== id);
       saveExpenses();
       renderExpenseList();
+    }
+
+    // Populate Payment Dropdown
+    function updatePaymentSelect() {
+      const select = document.getElementById('expensePayment');
+      select.innerHTML = config.paymentMethods.map(p => `<option value="${p}">${p}</option>`).join('');
     }
 
     document.getElementById('expenseForm').addEventListener('submit', (e) => {
@@ -804,6 +829,51 @@
 
       document.getElementById('expenseAmount').value = '';
       document.getElementById('expenseNote').value = '';
+      
+      // Auto switch back to dashboard after saving
+      document.querySelector('[data-tab="tab-dashboard"]').click();
+    });
+
+    // Breaks UI Logic
+    function renderBreaks(breaksArray) {
+      const container = document.getElementById('breaksContainer');
+      container.innerHTML = breaksArray.map(b => `
+        <div class="break-item" data-id="${b.id}">
+          <input type="time" class="break-start" value="${b.start}" style="padding: 6px; font-size: 14px; flex: 1;">
+          <span style="color: var(--text-sub);">-</span>
+          <input type="time" class="break-end" value="${b.end}" style="padding: 6px; font-size: 14px; flex: 1;">
+          <label class="switch" style="transform: scale(0.8); margin: 0 4px;">
+            <input type="checkbox" class="break-enabled" ${b.enabled ? 'checked' : ''}>
+            <span class="slider"></span>
+          </label>
+          <button type="button" class="btn-danger remove-break" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">✕</button>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('addBreakBtn').addEventListener('click', () => {
+      // Create a temporary element to not lose focus on existing unsaved inputs
+      const container = document.getElementById('breaksContainer');
+      const newId = Date.now().toString();
+      const html = `
+        <div class="break-item" data-id="${newId}">
+          <input type="time" class="break-start" value="12:00" style="padding: 6px; font-size: 14px; flex: 1;">
+          <span style="color: var(--text-sub);">-</span>
+          <input type="time" class="break-end" value="13:00" style="padding: 6px; font-size: 14px; flex: 1;">
+          <label class="switch" style="transform: scale(0.8); margin: 0 4px;">
+            <input type="checkbox" class="break-enabled" checked>
+            <span class="slider"></span>
+          </label>
+          <button type="button" class="btn-danger remove-break" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">✕</button>
+        </div>
+      `;
+      container.insertAdjacentHTML('beforeend', html);
+    });
+
+    document.getElementById('breaksContainer').addEventListener('click', (e) => {
+      if (e.target.classList.contains('remove-break')) {
+        e.target.closest('.break-item').remove();
+      }
     });
 
     // Settings UI Binding
@@ -812,10 +882,11 @@
       document.getElementById('salaryAmount').value = config.salaryAmount;
       document.getElementById('workStart').value = config.workStart;
       document.getElementById('workEnd').value = config.workEnd;
-      document.getElementById('lunchToggle').checked = config.lunchEnabled;
-      document.getElementById('lunchStart').value = config.lunchStart;
-      document.getElementById('lunchEnd').value = config.lunchEnd;
       document.getElementById('decimalPlaces').value = config.decimalPlaces;
+      document.getElementById('paymentMethodsInput').value = config.paymentMethods.join(', ');
+
+      renderBreaks(config.breaks);
+      updatePaymentSelect();
 
       // Update days UI
       document.querySelectorAll('.day-chip').forEach(chip => {
@@ -836,11 +907,27 @@
       config.salaryAmount = parseFloat(document.getElementById('salaryAmount').value) || 0;
       config.workStart = document.getElementById('workStart').value;
       config.workEnd = document.getElementById('workEnd').value;
-      config.lunchEnabled = document.getElementById('lunchToggle').checked;
-      config.lunchStart = document.getElementById('lunchStart').value;
-      config.lunchEnd = document.getElementById('lunchEnd').value;
       config.decimalPlaces = parseInt(document.getElementById('decimalPlaces').value);
 
+      // Save custom payment methods
+      const rawPayments = document.getElementById('paymentMethodsInput').value;
+      config.paymentMethods = rawPayments.split(',').map(s => s.trim()).filter(s => s);
+      if (config.paymentMethods.length === 0) config.paymentMethods = ['現金']; // Fallback
+      updatePaymentSelect();
+
+      // Save dynamic breaks
+      const newBreaks = [];
+      document.querySelectorAll('.break-item').forEach(item => {
+        newBreaks.push({
+          id: item.dataset.id,
+          start: item.querySelector('.break-start').value,
+          end: item.querySelector('.break-end').value,
+          enabled: item.querySelector('.break-enabled').checked
+        });
+      });
+      config.breaks = newBreaks;
+
+      // Save days
       const activeDays = [];
       document.querySelectorAll('.day-chip.active').forEach(chip => {
         activeDays.push(parseInt(chip.dataset.day));
@@ -851,20 +938,17 @@
       alert('✅ 設定已成功更新！');
     });
 
-    // CSV Export (記數易 Standard Compatible CSV)
+    // CSV Export
     document.getElementById('exportCsvBtn').addEventListener('click', () => {
       if (expenses.length === 0) {
         alert('目前無任何記帳紀錄可供匯出。');
         return;
       }
-
-      let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // UTF-8 BOM
+      let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
       csvContent += "日期,時間,支付方式,金額,備註\n";
-
       expenses.forEach(item => {
         csvContent += `"${item.date}","${item.time}","${item.payment}","${item.amount}","${item.note || ''}"\n`;
       });
-
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
@@ -878,7 +962,7 @@
     document.getElementById('clearDataBtn').addEventListener('click', () => {
       if (confirm('確定要清除所有本地儲存嘅資料？（此動作無法復原）')) {
         localStorage.clear();
-        config = defaultConfig;
+        config = { ...defaultConfig };
         expenses = [];
         loadSettingsToForm();
         renderExpenseList();
@@ -900,7 +984,7 @@
     // App Initialization
     loadSettingsToForm();
     renderExpenseList();
-    setInterval(tick, 30); // 30ms render loop for silky smooth numbers
+    setInterval(tick, 30);
   </script>
 </body>
 </html>
