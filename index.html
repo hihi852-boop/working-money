@@ -303,6 +303,35 @@
       border: 1px solid var(--border-color);
     }
 
+    /* Sortable List (For Payment Methods) */
+    .sortable-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #FAFAFC;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      font-size: 15px;
+      cursor: grab;
+      transition: background 0.2s;
+    }
+    
+    .sortable-item:active {
+      cursor: grabbing;
+      background: #F2F2F7;
+    }
+
+    .delete-btn {
+      color: var(--danger);
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+
     /* Bottom Navigation */
     .tab-bar {
       position: fixed;
@@ -461,7 +490,7 @@
         </div>
       </div>
 
-      <!-- 開支紀錄 (搬咗去主畫面) -->
+      <!-- 開支紀錄 -->
       <div class="card">
         <h3 style="font-size: 16px;">📋 今日開支紀錄</h3>
         <div id="expenseList" class="expense-list">
@@ -550,12 +579,6 @@
           </div>
         </div>
 
-        <!-- 自訂支付方式 -->
-        <div class="form-group" style="margin-top: 20px;">
-          <label>自訂支付方式 (用逗號分隔)</label>
-          <input type="text" id="paymentMethodsInput" placeholder="八達通,PayMe,現金...">
-        </div>
-
         <div class="form-group">
           <label>顯示小數位數</label>
           <select id="decimalPlaces">
@@ -567,7 +590,19 @@
           </select>
         </div>
 
-        <button id="saveSettingsBtn" class="btn" style="margin-top: 8px;">儲存設定</button>
+        <button id="saveSettingsBtn" class="btn" style="margin-top: 8px;">儲存基礎設定</button>
+      </div>
+
+      <!-- 新增：自訂支付方式卡片 -->
+      <div class="card">
+        <h3 style="margin-bottom: 14px; font-size: 16px;">💳 支付方式排序</h3>
+        <div id="paymentListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom: 16px;">
+          <!-- Payment items will populate here -->
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <input type="text" id="newPaymentInput" placeholder="例如：💳 信用卡" style="background-color: #FAFAFC;">
+          <button type="button" id="addPaymentBtn" class="btn" style="padding: 12px; font-size: 15px;">新增支付方式</button>
+        </div>
       </div>
 
       <div class="card">
@@ -609,13 +644,12 @@
       breaks: [
         { id: 'b1', start: '12:00', end: '13:00', enabled: true }
       ],
-      paymentMethods: ['八達通', 'PayMe', '現金', '信用卡', '其他']
+      paymentMethods: ['八達通', 'PayMe', '現金', '信用卡']
     };
 
-    // Load & migrate config
     let savedConfig = JSON.parse(localStorage.getItem('wtp_config'));
     
-    // Migration from old single-lunch version to multi-breaks
+    // Migration
     if (savedConfig && savedConfig.lunchEnabled !== undefined) {
       savedConfig.breaks = [{ id: 'b1', start: savedConfig.lunchStart || '12:00', end: savedConfig.lunchEnd || '13:00', enabled: savedConfig.lunchEnabled }];
       delete savedConfig.lunchEnabled;
@@ -624,13 +658,11 @@
     }
     
     let config = { ...defaultConfig, ...savedConfig };
-    // Ensure arrays exist for legacy users
     if (!config.breaks) config.breaks = defaultConfig.breaks;
     if (!config.paymentMethods) config.paymentMethods = defaultConfig.paymentMethods;
     
     let expenses = JSON.parse(localStorage.getItem('wtp_expenses')) || [];
 
-    // Helper functions
     function parseTime(timeStr) {
       const [h, m] = timeStr.split(':').map(Number);
       return h * 3600 + m * 60;
@@ -649,7 +681,6 @@
       localStorage.setItem('wtp_expenses', JSON.stringify(expenses));
     }
 
-    // Advanced Break Calculation Logic
     function getValidBreaks() {
       const startSec = parseTime(config.workStart);
       const endSec = parseTime(config.workEnd);
@@ -675,14 +706,13 @@
           currentPos = cappedTime;
           break;
         } else {
-          break; // Break is in the future
+          break;
         }
       }
       worked += Math.max(0, cappedTime - currentPos);
       return worked;
     }
 
-    // Core Render Ticker Loop (Runs every ~30ms)
     function tick() {
       const now = new Date();
       const currentDay = now.getDay();
@@ -696,7 +726,7 @@
 
       let dailySalary = 0;
       if (config.salaryType === 'monthly') {
-        dailySalary = config.salaryAmount / 21.75; // Approx working days
+        dailySalary = config.salaryAmount / 21.75;
       } else if (config.salaryType === 'daily') {
         dailySalary = config.salaryAmount;
       } else if (config.salaryType === 'hourly') {
@@ -711,7 +741,6 @@
       let grossEarned = 0;
       const isWorkDay = config.workDays.includes(currentDay);
 
-      // Check if currently resting in ANY active break
       let isCurrentlyResting = false;
       for (let b of validBreaks) {
         if (currentSec >= b.start && currentSec < b.end) {
@@ -741,7 +770,6 @@
         grossEarned = getWorkedSeconds(currentSec, startSec, endSec, validBreaks) * ratePerSecond;
       }
 
-      // Calculate Expenses Today
       const todayKey = getTodayKey();
       const todayExpensesTotal = expenses
         .filter(item => item.date === todayKey)
@@ -750,13 +778,11 @@
       const netEarned = grossEarned - todayExpensesTotal;
       const decimals = parseInt(config.decimalPlaces);
 
-      // Render Dashboard Elements
       document.getElementById('netAmount').innerText = netEarned.toFixed(decimals);
       document.getElementById('grossAmount').innerText = '$' + grossEarned.toFixed(2);
       document.getElementById('todayExpense').innerText = '$' + todayExpensesTotal.toFixed(2);
       document.getElementById('perSecondRate').innerText = ratePerSecond.toFixed(4);
 
-      // Workday Progress Bar Calculation
       let progressPct = 0;
       if (isWorkDay && endSec > startSec) {
         if (currentSec >= endSec) progressPct = 100;
@@ -768,10 +794,10 @@
       document.getElementById('progressBarFill').style.width = `${progressPct}%`;
     }
 
-    // Expenses UI Logic
+    // --- Expense Tracking ---
     function renderExpenseList() {
       const todayKey = getTodayKey();
-      const listEl = document.getElementById('expenseList'); // Now on dashboard tab
+      const listEl = document.getElementById('expenseList');
       const todayItems = expenses.filter(item => item.date === todayKey);
 
       if (todayItems.length === 0) {
@@ -799,12 +825,6 @@
       renderExpenseList();
     }
 
-    // Populate Payment Dropdown
-    function updatePaymentSelect() {
-      const select = document.getElementById('expensePayment');
-      select.innerHTML = config.paymentMethods.map(p => `<option value="${p}">${p}</option>`).join('');
-    }
-
     document.getElementById('expenseForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const amount = parseFloat(document.getElementById('expenseAmount').value);
@@ -829,12 +849,82 @@
 
       document.getElementById('expenseAmount').value = '';
       document.getElementById('expenseNote').value = '';
-      
-      // Auto switch back to dashboard after saving
       document.querySelector('[data-tab="tab-dashboard"]').click();
     });
 
-    // Breaks UI Logic
+
+    // --- Payment Methods Manager (Drag & Drop + Add/Remove) ---
+    let draggedIndex = null;
+
+    function renderPaymentMethods() {
+      const container = document.getElementById('paymentListContainer');
+      container.innerHTML = config.paymentMethods.map((p, index) => `
+        <div class="sortable-item" draggable="true" data-index="${index}">
+          <div style="display: flex; align-items: center; gap: 12px; pointer-events: none;">
+            <span style="color: #C7C7CC; font-weight: bold; font-size: 18px;">≡</span>
+            <span style="font-weight: 500;">${p}</span>
+          </div>
+          <button type="button" class="delete-btn" data-index="${index}">×</button>
+        </div>
+      `).join('');
+
+      // Update Dropdown in Expense Tab
+      document.getElementById('expensePayment').innerHTML = 
+        config.paymentMethods.map(p => `<option value="${p}">${p}</option>`).join('');
+
+      // Add Drag Events
+      container.querySelectorAll('.sortable-item').forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+          draggedIndex = parseInt(item.dataset.index);
+          setTimeout(() => item.style.opacity = '0.5', 0);
+        });
+        
+        item.addEventListener('dragover', (e) => {
+          e.preventDefault();
+        });
+        
+        item.addEventListener('drop', (e) => {
+          e.preventDefault();
+          const targetIndex = parseInt(item.dataset.index);
+          if (draggedIndex !== null && draggedIndex !== targetIndex) {
+            const movedItem = config.paymentMethods.splice(draggedIndex, 1)[0];
+            config.paymentMethods.splice(targetIndex, 0, movedItem);
+            saveConfig();
+            renderPaymentMethods();
+          }
+        });
+        
+        item.addEventListener('dragend', () => {
+          item.style.opacity = '1';
+          draggedIndex = null;
+        });
+      });
+    }
+
+    // Event Delegation for Deleting Payment Method
+    document.getElementById('paymentListContainer').addEventListener('click', (e) => {
+      if (e.target.classList.contains('delete-btn')) {
+        const index = parseInt(e.target.dataset.index);
+        config.paymentMethods.splice(index, 1);
+        saveConfig();
+        renderPaymentMethods();
+      }
+    });
+
+    // Add New Payment Method
+    document.getElementById('addPaymentBtn').addEventListener('click', () => {
+      const input = document.getElementById('newPaymentInput');
+      const val = input.value.trim();
+      if (val) {
+        config.paymentMethods.push(val);
+        input.value = '';
+        saveConfig();
+        renderPaymentMethods();
+      }
+    });
+
+
+    // --- Break Times Manager ---
     function renderBreaks(breaksArray) {
       const container = document.getElementById('breaksContainer');
       container.innerHTML = breaksArray.map(b => `
@@ -852,7 +942,6 @@
     }
 
     document.getElementById('addBreakBtn').addEventListener('click', () => {
-      // Create a temporary element to not lose focus on existing unsaved inputs
       const container = document.getElementById('breaksContainer');
       const newId = Date.now().toString();
       const html = `
@@ -876,19 +965,17 @@
       }
     });
 
-    // Settings UI Binding
+    // --- Core Settings Manager ---
     function loadSettingsToForm() {
       document.getElementById('salaryType').value = config.salaryType;
       document.getElementById('salaryAmount').value = config.salaryAmount;
       document.getElementById('workStart').value = config.workStart;
       document.getElementById('workEnd').value = config.workEnd;
       document.getElementById('decimalPlaces').value = config.decimalPlaces;
-      document.getElementById('paymentMethodsInput').value = config.paymentMethods.join(', ');
 
       renderBreaks(config.breaks);
-      updatePaymentSelect();
+      renderPaymentMethods(); // Load custom payment list
 
-      // Update days UI
       document.querySelectorAll('.day-chip').forEach(chip => {
         const day = parseInt(chip.dataset.day);
         if (config.workDays.includes(day)) chip.classList.add('active');
@@ -909,13 +996,6 @@
       config.workEnd = document.getElementById('workEnd').value;
       config.decimalPlaces = parseInt(document.getElementById('decimalPlaces').value);
 
-      // Save custom payment methods
-      const rawPayments = document.getElementById('paymentMethodsInput').value;
-      config.paymentMethods = rawPayments.split(',').map(s => s.trim()).filter(s => s);
-      if (config.paymentMethods.length === 0) config.paymentMethods = ['現金']; // Fallback
-      updatePaymentSelect();
-
-      // Save dynamic breaks
       const newBreaks = [];
       document.querySelectorAll('.break-item').forEach(item => {
         newBreaks.push({
@@ -927,7 +1007,6 @@
       });
       config.breaks = newBreaks;
 
-      // Save days
       const activeDays = [];
       document.querySelectorAll('.day-chip.active').forEach(chip => {
         activeDays.push(parseInt(chip.dataset.day));
@@ -935,10 +1014,10 @@
       config.workDays = activeDays;
 
       saveConfig();
-      alert('✅ 設定已成功更新！');
+      alert('✅ 基礎設定已成功更新！');
     });
 
-    // CSV Export
+    // --- Utility Functions ---
     document.getElementById('exportCsvBtn').addEventListener('click', () => {
       if (expenses.length === 0) {
         alert('目前無任何記帳紀錄可供匯出。');
@@ -958,7 +1037,6 @@
       document.body.removeChild(link);
     });
 
-    // Clear Data
     document.getElementById('clearDataBtn').addEventListener('click', () => {
       if (confirm('確定要清除所有本地儲存嘅資料？（此動作無法復原）')) {
         localStorage.clear();
@@ -970,7 +1048,6 @@
       }
     });
 
-    // Tab Navigation Logic
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -981,7 +1058,7 @@
       });
     });
 
-    // App Initialization
+    // Initializations
     loadSettingsToForm();
     renderExpenseList();
     setInterval(tick, 30);
