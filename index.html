@@ -504,9 +504,10 @@
       <div class="card">
         <h3 style="margin-bottom: 12px; font-size: 16px;">➕ 新增返工開支</h3>
         <form id="expenseForm">
+          <!-- 已交換位置：備註喺頂，金額同支付方式喺下面 -->
           <div class="form-group">
-            <label>金額 ($)</label>
-            <input type="number" id="expenseAmount" step="0.1" placeholder="例如：4.5 或 60" required>
+            <label>備註 / 項目</label>
+            <input type="text" id="expenseNote" placeholder="例如：搭車、食午餐">
           </div>
           <div class="input-row form-group">
             <div style="flex: 1;">
@@ -516,8 +517,8 @@
               </select>
             </div>
             <div style="flex: 1.5;">
-              <label>備註 / 項目</label>
-              <input type="text" id="expenseNote" placeholder="例如：搭車、食午餐">
+              <label>金額 ($)</label>
+              <input type="number" id="expenseAmount" step="0.1" placeholder="例如：4.5 或 60" required>
             </div>
           </div>
           <button type="submit" class="btn">記帳落袋</button>
@@ -593,7 +594,7 @@
         <button id="saveSettingsBtn" class="btn" style="margin-top: 8px;">儲存基礎設定</button>
       </div>
 
-      <!-- 新增：自訂支付方式卡片 -->
+      <!-- 自訂支付方式卡片 -->
       <div class="card">
         <h3 style="margin-bottom: 14px; font-size: 16px;">💳 支付方式排序</h3>
         <div id="paymentListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom: 16px;">
@@ -868,21 +869,15 @@
         </div>
       `).join('');
 
-      // Update Dropdown in Expense Tab
       document.getElementById('expensePayment').innerHTML = 
         config.paymentMethods.map(p => `<option value="${p}">${p}</option>`).join('');
 
-      // Add Drag Events
       container.querySelectorAll('.sortable-item').forEach(item => {
         item.addEventListener('dragstart', (e) => {
           draggedIndex = parseInt(item.dataset.index);
           setTimeout(() => item.style.opacity = '0.5', 0);
         });
-        
-        item.addEventListener('dragover', (e) => {
-          e.preventDefault();
-        });
-        
+        item.addEventListener('dragover', (e) => e.preventDefault());
         item.addEventListener('drop', (e) => {
           e.preventDefault();
           const targetIndex = parseInt(item.dataset.index);
@@ -893,7 +888,6 @@
             renderPaymentMethods();
           }
         });
-        
         item.addEventListener('dragend', () => {
           item.style.opacity = '1';
           draggedIndex = null;
@@ -901,7 +895,6 @@
       });
     }
 
-    // Event Delegation for Deleting Payment Method
     document.getElementById('paymentListContainer').addEventListener('click', (e) => {
       if (e.target.classList.contains('delete-btn')) {
         const index = parseInt(e.target.dataset.index);
@@ -911,7 +904,6 @@
       }
     });
 
-    // Add New Payment Method
     document.getElementById('addPaymentBtn').addEventListener('click', () => {
       const input = document.getElementById('newPaymentInput');
       const val = input.value.trim();
@@ -974,7 +966,7 @@
       document.getElementById('decimalPlaces').value = config.decimalPlaces;
 
       renderBreaks(config.breaks);
-      renderPaymentMethods(); // Load custom payment list
+      renderPaymentMethods();
 
       document.querySelectorAll('.day-chip').forEach(chip => {
         const day = parseInt(chip.dataset.day);
@@ -984,9 +976,7 @@
     }
 
     document.querySelectorAll('.day-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        chip.classList.toggle('active');
-      });
+      chip.addEventListener('click', () => chip.classList.toggle('active'));
     });
 
     document.getElementById('saveSettingsBtn').addEventListener('click', () => {
@@ -1057,6 +1047,35 @@
         document.getElementById(btn.dataset.tab).classList.add('active');
       });
     });
+
+    // --- PWA Offline Support (Inline Service Worker) ---
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        const CACHE_NAME = 'wtp-cache-v1';
+        self.addEventListener('install', (e) => {
+          e.waitUntil(
+            caches.open(CACHE_NAME).then((cache) => {
+              // Cache the current page URL
+              return cache.addAll([location.pathname]);
+            })
+          );
+        });
+        self.addEventListener('fetch', (e) => {
+          e.respondWith(
+            caches.match(e.request).then((res) => {
+              return res || fetch(e.request);
+            })
+          );
+        });
+      `;
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swUrl).then(() => {
+        console.log('✅ Service Worker 註冊成功，支援離線模式 (Offline Mode)！');
+      }).catch((err) => {
+        console.error('Service Worker 註冊失敗:', err);
+      });
+    }
 
     // Initializations
     loadSettingsToForm();
