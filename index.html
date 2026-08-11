@@ -29,20 +29,49 @@
 
     body { background-color: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; padding: calc(env(safe-area-inset-top) + 16px) 12px calc(env(safe-area-inset-bottom) + 80px) 12px; }
 
-    .app-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 12px; }
+    .app-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 12px; overflow-x: hidden; }
 
-    header { display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; }
-    .app-title { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px;}
+    /* 修正 Header 排版，防止多語言標題過長換行 */
+    header { display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; gap: 10px; }
     
+    .app-title-container { 
+      display: flex; 
+      align-items: baseline; 
+      gap: 6px; 
+      white-space: nowrap; 
+      flex-shrink: 1; /* 允許標題縮小 */
+      overflow: hidden; 
+    }
+    .app-title-main { 
+      font-size: 24px; 
+      font-weight: 800; 
+      letter-spacing: -0.5px; 
+      color: var(--text-main);
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+    .app-title-sub { 
+      font-size: 18px; 
+      color: var(--text-sub); 
+      font-weight: 600; 
+    }
+    
+    .header-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0; /* 確保按鈕同 Badge 唔會變形 */
+    }
+
     .lang-btn { font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #E5E5EA; transition: 0.2s; }
     .lang-btn:active { opacity: 0.7; transform: scale(0.9); }
 
-    .status-badge { font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; }
+    .status-badge { font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
     .status-badge.working { background: rgba(52, 199, 89, 0.15); color: var(--success); }
     .status-badge.resting { background: rgba(255, 149, 0, 0.15); color: var(--warning); }
     .status-badge.off { background: rgba(142, 142, 147, 0.15); color: var(--text-sub); }
     .status-badge.ot { background: rgba(0, 122, 255, 0.15); color: var(--primary); }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: currentColor; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: currentColor; flex-shrink: 0; }
 
     .card { background: var(--card-bg); border-radius: var(--radius-lg); padding: 20px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); }
     .ticker-card { text-align: center; position: relative; overflow: hidden; }
@@ -114,8 +143,12 @@
   <div class="app-container">
     <!-- Top Header -->
     <header>
-      <div class="app-title">開工計 <span style="font-size: 16px; color: var(--text-sub); font-weight: 600;">WorkTime Pay</span></div>
-      <div style="display: flex; gap: 10px; align-items: center;">
+      <div class="app-title-container">
+        <!-- 主標題會隨語言變更，副標題永遠係 Pay -->
+        <span class="app-title-main" data-i18n="app_title">開工計</span>
+        <span class="app-title-sub">Pay</span>
+      </div>
+      <div class="header-controls">
         <div id="openLangBtn" class="lang-btn">🌐</div>
         <div id="statusBadge" class="status-badge off">
           <span class="status-dot"></span>
@@ -365,6 +398,7 @@
     // --- i18n Language System (HK, EN, RU) ---
     const dict = {
       hk: {
+        app_title: '開工計',
         status_off: '已收工', status_leave: '休假中', status_not_started: '未開工', status_resting: '休息中 ☕', status_working: '上班中 🔥', status_ot: 'OT 加班中 🔥',
         gross: '今日毛薪金 (Gross)', net: '今日累積淨賺 (Net)', sec_rate: '⚡ 秒薪: $', per_sec: '/ 秒', progress: '今日工時進度', expense: '今日返工開支 (Expenses)',
         slack_title: '🐍 蛇王計時器', slack_earned: '(袋咗 $', slack_btn_start: '開始', slack_btn_stop: '停止', ot_title: '🔥 加班 (OT) 模式', ot_desc: '收工後繼續自動計錢',
@@ -376,6 +410,7 @@
         summary_title: '📝 今日總結報告', close_summary: '收工！關閉總結', slack_earned_lbl: '🐍 蛇王袋咗', ot_earned_lbl: '🔥 OT 補水', confirm_reset_today: '確定要重設今日嘅所有數據？', confirm_reset_all: '確定清除所有資料？無法復原！'
       },
       en: {
+        app_title: 'WorkTime',
         status_off: 'Off Work', status_leave: 'On Leave', status_not_started: 'Not Started', status_resting: 'Resting ☕', status_working: 'Working 🔥', status_ot: 'OT Mode 🔥',
         gross: 'Today Gross Earned', net: 'Today Net Earned', sec_rate: '⚡ Rate: $', per_sec: '/ sec', progress: 'Shift Progress', expense: 'Today Expenses',
         slack_title: '🐍 Slacking Timer', slack_earned: '(Earned $', slack_btn_start: 'Start', slack_btn_stop: 'Stop', ot_title: '🔥 Overtime (OT)', ot_desc: 'Keep earning after shift ends',
@@ -387,14 +422,15 @@
         summary_title: '📝 Daily Summary', close_summary: 'Close Summary', slack_earned_lbl: '🐍 Slack Earned', ot_earned_lbl: '🔥 OT Earned', confirm_reset_today: 'Reset all data for TODAY?', confirm_reset_all: 'Clear ALL data? Cannot be undone!'
       },
       ru: {
-        status_off: 'Рабочий день окончен', status_leave: 'В отпуске', status_not_started: 'Не начато', status_resting: 'Отдых ☕', status_working: 'Работаю 🔥', status_ot: 'Сверхурочные 🔥',
-        gross: 'Грязными за сегодня', net: 'Чистыми за сегодня', sec_rate: '⚡ Ставка: $', per_sec: '/ сек', progress: 'Прогресс смены', expense: 'Расходы за сегодня',
+        app_title: 'Рабочее время',
+        status_off: 'Окончен', status_leave: 'В отпуске', status_not_started: 'Не начато', status_resting: 'Отдых ☕', status_working: 'Работаю 🔥', status_ot: 'Сверхурочные 🔥',
+        gross: 'Грязными', net: 'Чистыми', sec_rate: '⚡ Ставка: $', per_sec: '/ сек', progress: 'Прогресс смены', expense: 'Расходы',
         slack_title: '🐍 Таймер безделья', slack_earned: '(Заработано $', slack_btn_start: 'Начать', slack_btn_stop: 'Стоп', ot_title: '🔥 Сверхурочные (OT)', ot_desc: 'Зарабатывать после смены',
         expense_list: '📋 История расходов', no_expense: 'Сегодня нет расходов', btn_summary: '📝 Итоги дня', add_expense: '➕ Добавить расход', note: 'Заметка', note_ph: 'напр., Автобус, Обед',
         payment: 'Способ оплаты', amount: 'Сумма ($)', save_expense: 'Сохранить расход', settings_title: '⚙️ Зарплата и настройки', salary_type: 'Тип зарплаты', monthly: 'За месяц', daily: 'За день', hourly: 'За час',
-        monthly_days: 'Рабочих дней в месяце', cycle_start: 'Начало периода', pay_day: 'День зарплаты', shift_start: 'Начало смены', shift_end: 'Конец смены', ot_rate_title: 'Ставка за сверхурочные', ot_10: '1.0x (Обычная)', ot_15: '1.5x', ot_20: '2.0x', ot_custom: 'Своя ставка ($/час)',
-        workdays: 'Рабочие дни', breaks_title: 'Перерывы (Автопауза)', add_btn: '+ Добавить', decimals: 'Знаки после запятой', save_settings: 'Сохранить настройки', payment_sort: '💳 Способы оплаты', new_payment: 'Добавить способ',
-        backup_title: '📦 Резервное копирование', export_csv: 'Экспорт в CSV', reset_today: '🔄 Сбросить данные за сегодня', reset_all: 'Удалить все данные', tab_dashboard: 'Главная', tab_expense: 'Расходы', tab_settings: 'Настройки',
+        monthly_days: 'Рабочих дней в месяце', cycle_start: 'Начало периода', pay_day: 'День зарплаты', shift_start: 'Начало смены', shift_end: 'Конец смены', ot_rate_title: 'Ставка сверхурочных', ot_10: '1.0x (Обычная)', ot_15: '1.5x', ot_20: '2.0x', ot_custom: 'Своя ставка ($/час)',
+        workdays: 'Рабочие дни', breaks_title: 'Перерывы (Автопауза)', add_btn: '+ Добавить', decimals: 'Знаки', save_settings: 'Сохранить настройки', payment_sort: '💳 Способы оплаты', new_payment: 'Добавить способ',
+        backup_title: '📦 Резервное копирование', export_csv: 'Экспорт в CSV', reset_today: '🔄 Сбросить данные', reset_all: 'Удалить все данные', tab_dashboard: 'Главная', tab_expense: 'Расходы', tab_settings: 'Настройки',
         summary_title: '📝 Итоги дня', close_summary: 'Закрыть итоги', slack_earned_lbl: '🐍 Заработано на безделье', ot_earned_lbl: '🔥 Заработано на OT', confirm_reset_today: 'Сбросить все данные за СЕГОДНЯ?', confirm_reset_all: 'Удалить ВСЕ данные? Отменить невозможно!'
       }
     };
