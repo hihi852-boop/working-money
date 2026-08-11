@@ -8,9 +8,10 @@
   <meta name="theme-color" content="#f2f2f7">
   <title>開工計 WorkTime Pay</title>
 
+  <!-- PWA 相關連結 -->
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  
+
   <style>
     :root {
       --bg-color: #F2F2F7;
@@ -40,6 +41,7 @@
       display: flex;
       justify-content: center;
       min-height: 100vh;
+      /* iOS Safe Area 防重疊 */
       padding: calc(env(safe-area-inset-top) + 16px) 12px calc(env(safe-area-inset-bottom) + 80px) 12px;
     }
 
@@ -48,7 +50,7 @@
       max-width: 480px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px; /* 稍微縮窄間距以容納更多卡片 */
     }
 
     /* Header */
@@ -60,8 +62,8 @@
     }
 
     .app-title {
-      font-size: 26px;
-      font-weight: 800;
+      font-size: 26px; 
+      font-weight: 800; 
       letter-spacing: -0.5px;
     }
 
@@ -78,6 +80,7 @@
     .status-badge.working { background: rgba(52, 199, 89, 0.15); color: var(--success); }
     .status-badge.resting { background: rgba(255, 149, 0, 0.15); color: var(--warning); }
     .status-badge.off { background: rgba(142, 142, 147, 0.15); color: var(--text-sub); }
+    .status-badge.ot { background: rgba(0, 122, 255, 0.15); color: var(--primary); }
 
     .status-dot {
       width: 8px;
@@ -191,261 +194,79 @@
     .stat-value.spent { color: var(--danger); }
 
     /* Forms & Inputs */
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-group:last-child {
-      margin-bottom: 0;
-    }
-
-    label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-sub);
-      margin-bottom: 6px;
-    }
-
+    .form-group { margin-bottom: 16px; }
+    .form-group:last-child { margin-bottom: 0; }
+    label { display: block; font-size: 13px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; }
     input, select {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      font-size: 15px;
-      background-color: #FAFAFC;
-      color: var(--text-main);
-      outline: none;
-      transition: border 0.2s;
+      width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md);
+      font-size: 15px; background-color: #FAFAFC; color: var(--text-main); outline: none; transition: border 0.2s;
     }
-
-    input:focus, select:focus {
-      border-color: var(--primary);
-      background-color: #FFFFFF;
-    }
-
-    .input-row {
-      display: flex;
-      gap: 10px;
-    }
+    input:focus, select:focus { border-color: var(--primary); background-color: #FFFFFF; }
+    .input-row { display: flex; gap: 10px; }
 
     .btn {
-      width: 100%;
-      padding: 14px;
-      border: none;
-      border-radius: var(--radius-md);
-      background: var(--primary);
-      color: white;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.2s, transform 0.1s;
+      width: 100%; padding: 14px; border: none; border-radius: var(--radius-md);
+      background: var(--primary); color: white; font-size: 16px; font-weight: 600;
+      cursor: pointer; transition: opacity 0.2s, transform 0.1s;
     }
+    .btn:active { opacity: 0.8; transform: scale(0.98); }
+    .btn-secondary { background: #E5E5EA; color: var(--text-main); }
+    .btn-danger { background: rgba(255, 59, 48, 0.1); color: var(--danger); }
 
-    .btn:active {
-      opacity: 0.8;
-      transform: scale(0.98);
-    }
-
-    .btn-secondary {
-      background: #E5E5EA;
-      color: var(--text-main);
-    }
-
-    .btn-danger {
-      background: rgba(255, 59, 48, 0.1);
-      color: var(--danger);
-    }
-
-    /* List View for Expenses & Breaks */
-    .expense-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 12px;
-      max-height: 250px;
-      overflow-y: auto;
-    }
-
+    /* List View for Expenses */
+    .expense-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; max-height: 250px; overflow-y: auto; }
     .expense-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 12px;
-      background: #FAFAFC;
-      border-radius: 10px;
-      font-size: 14px;
+      display: flex; justify-content: space-between; align-items: center; padding: 10px 12px;
+      background: #FAFAFC; border-radius: 10px; font-size: 14px;
     }
-
-    .expense-info {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .expense-title {
-      font-weight: 600;
-    }
-
-    .expense-meta {
-      font-size: 11px;
-      color: var(--text-sub);
-    }
-
-    .expense-amount {
-      font-weight: 700;
-      color: var(--danger);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .break-item {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      background: #FAFAFC;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid var(--border-color);
-    }
-
-    /* Sortable List (For Payment Methods) */
-    .sortable-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #FAFAFC;
-      padding: 14px 16px;
-      border-radius: 10px;
-      border: 1px solid var(--border-color);
-      font-size: 15px;
-      cursor: grab;
-      transition: background 0.2s;
-    }
+    .expense-title { font-weight: 600; }
+    .expense-meta { font-size: 11px; color: var(--text-sub); }
+    .expense-amount { font-weight: 700; color: var(--danger); font-variant-numeric: tabular-nums; }
     
-    .sortable-item:active {
-      cursor: grabbing;
-      background: #F2F2F7;
-    }
+    .break-item { display: flex; gap: 8px; align-items: center; background: #FAFAFC; padding: 10px; border-radius: 10px; border: 1px solid var(--border-color); }
+    .sortable-item { display: flex; justify-content: space-between; align-items: center; background: #FAFAFC; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-color); font-size: 15px; cursor: grab; }
+    .delete-btn { color: var(--danger); background: none; border: none; font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1; }
 
-    .delete-btn {
-      color: var(--danger);
-      background: none;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-      padding: 0 4px;
-      line-height: 1;
-    }
-
-    /* Bottom Navigation */
-    .tab-bar {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 480px;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-top: 1px solid rgba(0, 0, 0, 0.1);
-      display: flex;
-      justify-content: space-around;
-      padding: 10px 0 24px 0;
-      z-index: 100;
-    }
-
-    .tab-btn {
-      background: none;
-      border: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      color: var(--text-sub);
-      font-size: 10px;
-      font-weight: 600;
-      cursor: pointer;
-      width: 33%;
-    }
-
-    .tab-btn.active {
-      color: var(--primary);
-    }
-
-    .tab-btn svg {
-      width: 22px;
-      height: 22px;
-      fill: currentColor;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 28px;
-    }
-
+    /* Toggle Switch */
+    .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
     .switch input { opacity: 0; width: 0; height: 0; }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #E5E5EA;
-      transition: .3s;
-      border-radius: 28px;
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 24px;
-      width: 24px;
-      left: 2px;
-      bottom: 2px;
-      background-color: white;
-      transition: .3s;
-      border-radius: 50%;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #E5E5EA; transition: .3s; border-radius: 28px; }
+    .slider:before { position: absolute; content: ""; height: 24px; width: 24px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
     input:checked + .slider { background-color: var(--success); }
     input:checked + .slider:before { transform: translateX(22px); }
 
-    .days-picker {
-      display: flex;
-      justify-content: space-between;
-      gap: 4px;
-      margin-top: 6px;
-    }
+    /* Day Picker */
+    .days-picker { display: flex; justify-content: space-between; gap: 4px; margin-top: 6px; }
+    .day-chip { flex: 1; text-align: center; padding: 8px 0; background: #FAFAFC; border: 1px solid var(--border-color); border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .day-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-    .day-chip {
-      flex: 1;
-      text-align: center;
-      padding: 8px 0;
-      background: #FAFAFC;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
+    /* Bottom Navigation */
+    .tab-bar {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px;
+      background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      padding: 10px 0 calc(env(safe-area-inset-bottom) + 14px) 0; border-top: 1px solid rgba(0, 0, 0, 0.1);
+      display: flex; justify-content: space-around; z-index: 100;
     }
+    .tab-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-sub); font-size: 10px; font-weight: 600; cursor: pointer; width: 33%; }
+    .tab-btn.active { color: var(--primary); }
+    .tab-btn svg { width: 22px; height: 22px; fill: currentColor; }
+    .tab-content { display: none; }
+    .tab-content.active { display: flex; flex-direction: column; gap: 12px; }
 
-    .day-chip.active {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
+    /* Modal Overlay (Daily Summary) */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+      display: none; align-items: center; justify-content: center; z-index: 999; padding: 20px;
+      animation: fadeIn 0.2s ease-out;
     }
+    .modal-card {
+      background: var(--card-bg); width: 100%; max-width: 400px;
+      border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 15px; }
+    .summary-row.total { border-top: 1px dashed var(--border-color); margin-top: 8px; padding-top: 12px; font-size: 18px; font-weight: 800; }
   </style>
 </head>
 <body>
@@ -464,9 +285,10 @@
     <!-- TAB 1: Realtime Ticker Dashboard -->
     <div id="tab-dashboard" class="tab-content active">
       <div class="card ticker-card">
-        <div class="ticker-label">今日累積淨賺 (Net Earned)</div>
+        <!-- 修正：主畫面顯示毛利 (Gross) -->
+        <div class="ticker-label">今日毛薪金 (Gross)</div>
         <div class="ticker-amount">
-          <span class="currency">$</span><span id="netAmount">0.00</span>
+          <span class="currency">$</span><span id="grossAmount">0.00</span>
         </div>
         <div class="rate-pill">
           ⚡ 秒薪: $<span id="perSecondRate">0.0000</span> / 秒
@@ -484,9 +306,10 @@
       </div>
 
       <div class="stats-grid">
+        <!-- 修正：副畫面顯示淨賺 (Net) -->
         <div class="card stat-card">
-          <div class="stat-title">今日毛薪金 (Gross)</div>
-          <div id="grossAmount" class="stat-value earned">$0.00</div>
+          <div class="stat-title">今日累積淨賺 (Net Earned)</div>
+          <div id="netAmount" class="stat-value earned">$0.00</div>
         </div>
         <div class="card stat-card">
           <div class="stat-title">今日返工開支 (Expenses)</div>
@@ -494,13 +317,38 @@
         </div>
       </div>
 
+      <!-- 新增：蛇王計時器 -->
+      <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px;">
+        <div>
+          <div class="stat-title" style="font-weight: 600; color: var(--text-main);">🐍 蛇王計時器</div>
+          <div class="stat-value" style="color: var(--primary); display: flex; align-items: baseline; gap: 6px;">
+            <span id="slackTime">00:00:00</span> 
+            <span style="font-size: 13px; font-weight: 500;">(袋咗 $<span id="slackMoney">0.00</span>)</span>
+          </div>
+        </div>
+        <button id="slackBtn" class="btn" style="width: auto; padding: 10px 20px; border-radius: 20px;">開始</button>
+      </div>
+
+      <!-- 新增：OT 加班模式 Toggle -->
+      <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px;">
+        <div>
+          <div class="stat-title" style="font-weight: 600; color: var(--text-main); margin-bottom: 2px;">🔥 加班 (OT) 模式</div>
+          <div style="font-size: 12px; color: var(--text-sub);">收工後繼續自動計錢</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="otToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+
       <!-- 開支紀錄 -->
       <div class="card">
         <h3 style="font-size: 16px;">📋 今日開支紀錄</h3>
-        <div id="expenseList" class="expense-list">
-          <!-- Expense items will populate here -->
-        </div>
+        <div id="expenseList" class="expense-list"></div>
       </div>
+
+      <!-- 每日總結按鈕 -->
+      <button id="summaryBtn" class="btn btn-secondary" style="margin-bottom: 20px;">📝 產生今日總結</button>
     </div>
 
     <!-- TAB 2: Work Expense Logger -->
@@ -508,7 +356,6 @@
       <div class="card">
         <h3 style="margin-bottom: 12px; font-size: 16px;">➕ 新增返工開支</h3>
         <form id="expenseForm">
-          <!-- 已交換位置：備註喺頂，金額同支付方式喺下面 -->
           <div class="form-group">
             <label>備註 / 項目</label>
             <input type="text" id="expenseNote" placeholder="例如：搭車、食午餐">
@@ -516,9 +363,7 @@
           <div class="input-row form-group">
             <div style="flex: 1;">
               <label>支付方式</label>
-              <select id="expensePayment">
-                <!-- 將由 JS 動態生成 -->
-              </select>
+              <select id="expensePayment"></select>
             </div>
             <div style="flex: 1.5;">
               <label>金額 ($)</label>
@@ -549,6 +394,24 @@
           <input type="number" id="salaryAmount" value="25000">
         </div>
 
+        <!-- 月薪專屬進階設定 (可自訂日期與天數) -->
+        <div id="monthlyConfigSection" style="background: #FAFAFC; padding: 14px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 16px;">
+          <div class="form-group">
+            <label style="color: var(--primary);">本月實際工作天數 (用作計算精準日薪)</label>
+            <input type="number" id="monthWorkDays" value="22" step="0.5" placeholder="例如：20, 21.5, 22">
+          </div>
+          <div class="input-row form-group" style="margin-bottom: 0;">
+            <div>
+              <label>計薪週期起點</label>
+              <input type="number" id="cycleStart" value="1" min="1" max="31" placeholder="日">
+            </div>
+            <div>
+              <label>出糧日</label>
+              <input type="number" id="payDay" value="1" min="1" max="31" placeholder="日">
+            </div>
+          </div>
+        </div>
+
         <div class="input-row form-group">
           <div>
             <label>開工時間</label>
@@ -561,7 +424,16 @@
         </div>
 
         <div class="form-group">
-          <label>工作日 (工作天設定)</label>
+          <label>OT 時薪補水倍率</label>
+          <select id="otMultiplier">
+            <option value="1">1.0x (單工)</option>
+            <option value="1.5">1.5x (個半)</option>
+            <option value="2">2.0x (雙工)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>工作日 (常規設定)</label>
           <div class="days-picker" id="daysPicker">
             <div class="day-chip active" data-day="1">一</div>
             <div class="day-chip active" data-day="2">二</div>
@@ -573,15 +445,12 @@
           </div>
         </div>
 
-        <!-- 自訂多重休息時段 -->
         <div class="form-group">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <label style="margin: 0;">休息時段 (自動暫停跳錢)</label>
             <button id="addBreakBtn" type="button" class="btn btn-secondary" style="padding: 4px 10px; width: auto; font-size: 12px; font-weight: 600;">+ 新增</button>
           </div>
-          <div id="breaksContainer" style="display:flex; flex-direction:column; gap:8px;">
-            <!-- Break Items will populate here -->
-          </div>
+          <div id="breaksContainer" style="display:flex; flex-direction:column; gap:8px;"></div>
         </div>
 
         <div class="form-group">
@@ -595,15 +464,12 @@
           </select>
         </div>
 
-        <button id="saveSettingsBtn" class="btn" style="margin-top: 8px;">儲存基礎設定</button>
+        <button id="saveSettingsBtn" class="btn" style="margin-top: 8px;">儲存設定</button>
       </div>
 
-      <!-- 自訂支付方式卡片 -->
       <div class="card">
         <h3 style="margin-bottom: 14px; font-size: 16px;">💳 支付方式排序</h3>
-        <div id="paymentListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom: 16px;">
-          <!-- Payment items will populate here -->
-        </div>
+        <div id="paymentListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom: 16px;"></div>
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <input type="text" id="newPaymentInput" placeholder="例如：💳 信用卡" style="background-color: #FAFAFC;">
           <button type="button" id="addPaymentBtn" class="btn" style="padding: 12px; font-size: 15px;">新增支付方式</button>
@@ -618,7 +484,42 @@
         </div>
       </div>
     </div>
+  </div>
 
+  <!-- 每日總結 Modal -->
+  <div id="summaryModal" class="modal-overlay">
+    <div class="modal-card">
+      <h2 style="margin-bottom: 4px;">📝 今日總結報告</h2>
+      <p id="summaryDate" style="color: var(--text-sub); margin-bottom: 16px; font-size: 14px; font-weight: 500;"></p>
+      
+      <div style="background: #FAFAFC; padding: 16px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border-color);">
+        <div class="summary-row">
+          <span style="color: var(--text-sub);">今日毛薪金 (Gross)</span> 
+          <span id="sumGross" style="font-weight: 700; color: var(--success);">$0.00</span>
+        </div>
+        <div class="summary-row">
+          <span style="color: var(--text-sub);">返工總開支 (Expenses)</span> 
+          <span id="sumExp" style="font-weight: 700; color: var(--danger);">-$0.00</span>
+        </div>
+        <div class="summary-row total">
+          <span>實際落袋 (Net Earned)</span> 
+          <span id="sumNet" style="color: var(--text-main);">$0.00</span>
+        </div>
+      </div>
+
+      <div style="background: rgba(0,122,255,0.08); padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+        <div class="summary-row">
+          <span style="font-weight: 600;">🐍 蛇王袋咗</span> 
+          <span id="sumSlackEarned" style="font-weight: 700; color: var(--primary);">$0.00</span>
+        </div>
+        <div class="summary-row" style="margin-top: 4px;">
+          <span style="font-weight: 600;">🔥 OT 補水</span> 
+          <span id="sumOtEarned" style="font-weight: 700; color: var(--warning);">$0.00</span>
+        </div>
+      </div>
+
+      <button id="closeSummaryBtn" class="btn">收工！關閉總結</button>
+    </div>
   </div>
 
   <!-- Bottom Navigation Bar -->
@@ -638,7 +539,6 @@
   </nav>
 
   <script>
-    // App State Configuration
     const defaultConfig = {
       salaryType: 'monthly',
       salaryAmount: 25000,
@@ -646,51 +546,62 @@
       workEnd: '18:00',
       workDays: [1, 2, 3, 4, 5],
       decimalPlaces: 2,
-      breaks: [
-        { id: 'b1', start: '12:00', end: '13:00', enabled: true }
-      ],
+      otMultiplier: 1.5,
+      monthWorkDays: 22,
+      cycleStartDay: 1,
+      payDay: 1,
+      breaks: [{ id: 'b1', start: '12:00', end: '13:00', enabled: true }],
       paymentMethods: ['八達通', 'PayMe', '現金', '信用卡']
     };
 
     let savedConfig = JSON.parse(localStorage.getItem('wtp_config'));
-    
-    // Migration
-    if (savedConfig && savedConfig.lunchEnabled !== undefined) {
-      savedConfig.breaks = [{ id: 'b1', start: savedConfig.lunchStart || '12:00', end: savedConfig.lunchEnd || '13:00', enabled: savedConfig.lunchEnabled }];
-      delete savedConfig.lunchEnabled;
-      delete savedConfig.lunchStart;
-      delete savedConfig.lunchEnd;
-    }
-    
     let config = { ...defaultConfig, ...savedConfig };
     if (!config.breaks) config.breaks = defaultConfig.breaks;
     if (!config.paymentMethods) config.paymentMethods = defaultConfig.paymentMethods;
     
     let expenses = JSON.parse(localStorage.getItem('wtp_expenses')) || [];
 
-    function parseTime(timeStr) {
-      const [h, m] = timeStr.split(':').map(Number);
-      return h * 3600 + m * 60;
-    }
-
+    // OT & Slack State (Resets daily)
     function getTodayKey() {
       const d = new Date();
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
-    function saveConfig() {
-      localStorage.setItem('wtp_config', JSON.stringify(config));
+    let slackData = JSON.parse(localStorage.getItem('wtp_slack')) || { date: getTodayKey(), isSlacking: false, lastStartSec: 0, accumulatedSec: 0 };
+    if (slackData.date !== getTodayKey()) {
+      slackData = { date: getTodayKey(), isSlacking: false, lastStartSec: 0, accumulatedSec: 0 };
+      saveSlackData();
+    }
+    
+    let otData = JSON.parse(localStorage.getItem('wtp_ot')) || { date: getTodayKey(), enabled: false };
+    if (otData.date !== getTodayKey()) {
+      otData = { date: getTodayKey(), enabled: false };
+      saveOtData();
     }
 
-    function saveExpenses() {
-      localStorage.setItem('wtp_expenses', JSON.stringify(expenses));
+    let globalOtEarned = 0;
+    let globalSlackEarned = 0;
+
+    // Helpers
+    function parseTime(timeStr) {
+      const [h, m] = timeStr.split(':').map(Number);
+      return h * 3600 + m * 60;
     }
+    function formatTime(totalSeconds) {
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = Math.floor(totalSeconds % 60);
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+    function saveConfig() { localStorage.setItem('wtp_config', JSON.stringify(config)); }
+    function saveExpenses() { localStorage.setItem('wtp_expenses', JSON.stringify(expenses)); }
+    function saveSlackData() { localStorage.setItem('wtp_slack', JSON.stringify(slackData)); }
+    function saveOtData() { localStorage.setItem('wtp_ot', JSON.stringify(otData)); }
 
     function getValidBreaks() {
       const startSec = parseTime(config.workStart);
       const endSec = parseTime(config.workEnd);
-      return config.breaks
-        .filter(b => b.enabled)
+      return config.breaks.filter(b => b.enabled)
         .map(b => ({ start: parseTime(b.start), end: parseTime(b.end) }))
         .filter(b => b.start >= startSec && b.end <= endSec && b.end > b.start)
         .sort((a, b) => a.start - b.start);
@@ -710,14 +621,13 @@
           worked += Math.max(0, b.start - currentPos);
           currentPos = cappedTime;
           break;
-        } else {
-          break;
-        }
+        } else break;
       }
       worked += Math.max(0, cappedTime - currentPos);
       return worked;
     }
 
+    // Core Render Loop
     function tick() {
       const now = new Date();
       const currentDay = now.getDay();
@@ -726,12 +636,11 @@
       const startSec = parseTime(config.workStart);
       const endSec = parseTime(config.workEnd);
       const validBreaks = getValidBreaks();
-      
       const totalWorkSec = getWorkedSeconds(endSec, startSec, endSec, validBreaks);
 
       let dailySalary = 0;
       if (config.salaryType === 'monthly') {
-        dailySalary = config.salaryAmount / 21.75;
+        dailySalary = config.salaryAmount / (config.monthWorkDays || 22); // 使用自訂每月天數精準計算
       } else if (config.salaryType === 'daily') {
         dailySalary = config.salaryAmount;
       } else if (config.salaryType === 'hourly') {
@@ -739,58 +648,72 @@
       }
 
       const ratePerSecond = totalWorkSec > 0 ? dailySalary / totalWorkSec : 0;
-
       const badge = document.getElementById('statusBadge');
       const statusText = document.getElementById('statusText');
 
       let grossEarned = 0;
+      let normalEarned = 0;
+      let otEarned = 0;
       const isWorkDay = config.workDays.includes(currentDay);
 
       let isCurrentlyResting = false;
       for (let b of validBreaks) {
-        if (currentSec >= b.start && currentSec < b.end) {
-          isCurrentlyResting = true;
-          break;
-        }
+        if (currentSec >= b.start && currentSec < b.end) { isCurrentlyResting = true; break; }
       }
 
-      if (!isWorkDay) {
-        badge.className = 'status-badge off';
-        statusText.innerText = '休假中';
-      } else if (currentSec < startSec) {
-        badge.className = 'status-badge off';
-        statusText.innerText = '未開工';
-      } else if (currentSec >= endSec) {
-        badge.className = 'status-badge off';
-        statusText.innerText = '已收工';
-      } else if (isCurrentlyResting) {
-        badge.className = 'status-badge resting';
-        statusText.innerText = '休息中 ☕';
-      } else {
-        badge.className = 'status-badge working';
-        statusText.innerText = '上班中 🔥';
-      }
-
+      // OT Calculation Logic
+      let isActuallyOT = false;
       if (isWorkDay) {
-        grossEarned = getWorkedSeconds(currentSec, startSec, endSec, validBreaks) * ratePerSecond;
+        normalEarned = getWorkedSeconds(currentSec, startSec, endSec, validBreaks) * ratePerSecond;
+        if (otData.enabled && currentSec > endSec) {
+          isActuallyOT = true;
+          let otSec = currentSec - endSec;
+          otEarned = otSec * ratePerSecond * (config.otMultiplier || 1.5);
+        }
+        grossEarned = normalEarned + otEarned;
       }
 
-      const todayKey = getTodayKey();
-      const todayExpensesTotal = expenses
-        .filter(item => item.date === todayKey)
-        .reduce((sum, item) => sum + item.amount, 0);
+      // Status Badge Update
+      if (!isWorkDay) {
+        badge.className = 'status-badge off'; statusText.innerText = '休假中';
+      } else if (currentSec < startSec) {
+        badge.className = 'status-badge off'; statusText.innerText = '未開工';
+      } else if (isCurrentlyResting) {
+        badge.className = 'status-badge resting'; statusText.innerText = '休息中 ☕';
+      } else if (isActuallyOT) {
+        badge.className = 'status-badge ot'; statusText.innerText = 'OT 加班中 🔥';
+      } else if (currentSec >= endSec) {
+        badge.className = 'status-badge off'; statusText.innerText = '已收工';
+      } else {
+        badge.className = 'status-badge working'; statusText.innerText = '上班中 🔥';
+      }
 
+      // Expenses & Net Update
+      const todayKey = getTodayKey();
+      const todayExpensesTotal = expenses.filter(item => item.date === todayKey).reduce((sum, item) => sum + item.amount, 0);
       const netEarned = grossEarned - todayExpensesTotal;
       const decimals = parseInt(config.decimalPlaces);
 
-      document.getElementById('netAmount').innerText = netEarned.toFixed(decimals);
-      document.getElementById('grossAmount').innerText = '$' + grossEarned.toFixed(2);
+      document.getElementById('grossAmount').innerText = grossEarned.toFixed(decimals);
+      document.getElementById('netAmount').innerText = '$' + netEarned.toFixed(2);
       document.getElementById('todayExpense').innerText = '$' + todayExpensesTotal.toFixed(2);
       document.getElementById('perSecondRate').innerText = ratePerSecond.toFixed(4);
 
+      // Slack Logic
+      let currentSlackSec = slackData.accumulatedSec;
+      if (slackData.isSlacking) {
+        currentSlackSec += Math.max(0, Math.floor(currentSec) - slackData.lastStartSec);
+      }
+      globalSlackEarned = currentSlackSec * ratePerSecond;
+      globalOtEarned = otEarned;
+      
+      document.getElementById('slackTime').innerText = formatTime(currentSlackSec);
+      document.getElementById('slackMoney').innerText = globalSlackEarned.toFixed(2);
+
+      // Progress Bar
       let progressPct = 0;
       if (isWorkDay && endSec > startSec) {
-        if (currentSec >= endSec) progressPct = 100;
+        if (currentSec >= endSec && !otData.enabled) progressPct = 100;
         else if (currentSec > startSec) {
           progressPct = Math.min(100, Math.max(0, ((currentSec - startSec) / (endSec - startSec)) * 100));
         }
@@ -798,6 +721,59 @@
       document.getElementById('progressPercent').innerText = `${progressPct.toFixed(1)}%`;
       document.getElementById('progressBarFill').style.width = `${progressPct}%`;
     }
+
+    // --- Action Buttons ---
+    
+    // Slack Button
+    const slackBtn = document.getElementById('slackBtn');
+    function initSlackUI() {
+      if (slackData.isSlacking) {
+        slackBtn.innerText = '停止蛇王';
+        slackBtn.className = 'btn btn-danger';
+      } else {
+        slackBtn.innerText = '開始蛇王';
+        slackBtn.className = 'btn';
+      }
+    }
+    initSlackUI();
+
+    slackBtn.addEventListener('click', () => {
+      const now = new Date();
+      const currentSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+      if (slackData.isSlacking) {
+        slackData.accumulatedSec += (currentSec - slackData.lastStartSec);
+        slackData.isSlacking = false;
+      } else {
+        slackData.lastStartSec = currentSec;
+        slackData.isSlacking = true;
+      }
+      saveSlackData();
+      initSlackUI();
+    });
+
+    // OT Toggle
+    const otToggle = document.getElementById('otToggle');
+    otToggle.checked = otData.enabled;
+    otToggle.addEventListener('change', (e) => {
+      otData.enabled = e.target.checked;
+      saveOtData();
+    });
+
+    // Daily Summary Modal
+    document.getElementById('summaryBtn').addEventListener('click', () => {
+      document.getElementById('summaryDate').innerText = '日期: ' + getTodayKey();
+      document.getElementById('sumGross').innerText = '$' + document.getElementById('grossAmount').innerText;
+      document.getElementById('sumExp').innerText = document.getElementById('todayExpense').innerText;
+      document.getElementById('sumNet').innerText = document.getElementById('netAmount').innerText;
+      
+      document.getElementById('sumOtEarned').innerText = `$${globalOtEarned.toFixed(2)}`;
+      document.getElementById('sumSlackEarned').innerText = `$${globalSlackEarned.toFixed(2)}`;
+      
+      document.getElementById('summaryModal').style.display = 'flex';
+    });
+    document.getElementById('closeSummaryBtn').addEventListener('click', () => {
+      document.getElementById('summaryModal').style.display = 'none';
+    });
 
     // --- Expense Tracking ---
     function renderExpenseList() {
@@ -809,7 +785,6 @@
         listEl.innerHTML = '<div style="text-align:center; color:#8E8E93; padding:12px; font-size:13px;">今日暫無記帳紀錄</div>';
         return;
       }
-
       listEl.innerHTML = todayItems.map((item) => `
         <div class="expense-item">
           <div class="expense-info">
@@ -824,47 +799,45 @@
       `).join('');
     }
 
-    function deleteExpense(id) {
-      expenses = expenses.filter(item => item.id !== id);
-      saveExpenses();
-      renderExpenseList();
-    }
+    function deleteExpense(id) { expenses = expenses.filter(item => item.id !== id); saveExpenses(); renderExpenseList(); }
 
     document.getElementById('expenseForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const amount = parseFloat(document.getElementById('expenseAmount').value);
-      const payment = document.getElementById('expensePayment').value;
-      const note = document.getElementById('expenseNote').value;
-      const now = new Date();
-
       if (isNaN(amount) || amount <= 0) return;
-
-      const newExpense = {
-        id: Date.now().toString(),
-        date: getTodayKey(),
-        time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
-        amount,
-        payment,
-        note
-      };
-
-      expenses.unshift(newExpense);
-      saveExpenses();
-      renderExpenseList();
-
-      document.getElementById('expenseAmount').value = '';
-      document.getElementById('expenseNote').value = '';
+      expenses.unshift({
+        id: Date.now().toString(), date: getTodayKey(),
+        time: `${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`,
+        amount, payment: document.getElementById('expensePayment').value, note: document.getElementById('expenseNote').value
+      });
+      saveExpenses(); renderExpenseList();
+      document.getElementById('expenseAmount').value = ''; document.getElementById('expenseNote').value = '';
       document.querySelector('[data-tab="tab-dashboard"]').click();
     });
 
+    // --- Settings Manager ---
+    document.getElementById('salaryType').addEventListener('change', (e) => {
+      document.getElementById('monthlyConfigSection').style.display = e.target.value === 'monthly' ? 'block' : 'none';
+    });
 
-    // --- Payment Methods Manager (Drag & Drop + Add/Remove) ---
-    let draggedIndex = null;
+    function loadSettingsToForm() {
+      document.getElementById('salaryType').value = config.salaryType;
+      document.getElementById('salaryAmount').value = config.salaryAmount;
+      document.getElementById('workStart').value = config.workStart;
+      document.getElementById('workEnd').value = config.workEnd;
+      document.getElementById('decimalPlaces').value = config.decimalPlaces;
+      document.getElementById('otMultiplier').value = config.otMultiplier || 1.5;
+      
+      // 月薪專屬
+      document.getElementById('monthlyConfigSection').style.display = config.salaryType === 'monthly' ? 'block' : 'none';
+      document.getElementById('monthWorkDays').value = config.monthWorkDays || 22;
+      document.getElementById('cycleStart').value = config.cycleStartDay || 1;
+      document.getElementById('payDay').value = config.payDay || 1;
 
-    function renderPaymentMethods() {
+      // 支付方式
       const container = document.getElementById('paymentListContainer');
       container.innerHTML = config.paymentMethods.map((p, index) => `
-        <div class="sortable-item" draggable="true" data-index="${index}">
+        <div class="sortable-item">
           <div style="display: flex; align-items: center; gap: 12px; pointer-events: none;">
             <span style="color: #C7C7CC; font-weight: bold; font-size: 18px;">≡</span>
             <span style="font-weight: 500;">${p}</span>
@@ -872,58 +845,10 @@
           <button type="button" class="delete-btn" data-index="${index}">×</button>
         </div>
       `).join('');
+      document.getElementById('expensePayment').innerHTML = config.paymentMethods.map(p => `<option value="${p}">${p}</option>`).join('');
 
-      document.getElementById('expensePayment').innerHTML = 
-        config.paymentMethods.map(p => `<option value="${p}">${p}</option>`).join('');
-
-      container.querySelectorAll('.sortable-item').forEach(item => {
-        item.addEventListener('dragstart', (e) => {
-          draggedIndex = parseInt(item.dataset.index);
-          setTimeout(() => item.style.opacity = '0.5', 0);
-        });
-        item.addEventListener('dragover', (e) => e.preventDefault());
-        item.addEventListener('drop', (e) => {
-          e.preventDefault();
-          const targetIndex = parseInt(item.dataset.index);
-          if (draggedIndex !== null && draggedIndex !== targetIndex) {
-            const movedItem = config.paymentMethods.splice(draggedIndex, 1)[0];
-            config.paymentMethods.splice(targetIndex, 0, movedItem);
-            saveConfig();
-            renderPaymentMethods();
-          }
-        });
-        item.addEventListener('dragend', () => {
-          item.style.opacity = '1';
-          draggedIndex = null;
-        });
-      });
-    }
-
-    document.getElementById('paymentListContainer').addEventListener('click', (e) => {
-      if (e.target.classList.contains('delete-btn')) {
-        const index = parseInt(e.target.dataset.index);
-        config.paymentMethods.splice(index, 1);
-        saveConfig();
-        renderPaymentMethods();
-      }
-    });
-
-    document.getElementById('addPaymentBtn').addEventListener('click', () => {
-      const input = document.getElementById('newPaymentInput');
-      const val = input.value.trim();
-      if (val) {
-        config.paymentMethods.push(val);
-        input.value = '';
-        saveConfig();
-        renderPaymentMethods();
-      }
-    });
-
-
-    // --- Break Times Manager ---
-    function renderBreaks(breaksArray) {
-      const container = document.getElementById('breaksContainer');
-      container.innerHTML = breaksArray.map(b => `
+      // 休息時段
+      document.getElementById('breaksContainer').innerHTML = config.breaks.map(b => `
         <div class="break-item" data-id="${b.id}">
           <input type="time" class="break-start" value="${b.start}" style="padding: 6px; font-size: 14px; flex: 1;">
           <span style="color: var(--text-sub);">-</span>
@@ -935,53 +860,13 @@
           <button type="button" class="btn-danger remove-break" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">✕</button>
         </div>
       `).join('');
-    }
 
-    document.getElementById('addBreakBtn').addEventListener('click', () => {
-      const container = document.getElementById('breaksContainer');
-      const newId = Date.now().toString();
-      const html = `
-        <div class="break-item" data-id="${newId}">
-          <input type="time" class="break-start" value="12:00" style="padding: 6px; font-size: 14px; flex: 1;">
-          <span style="color: var(--text-sub);">-</span>
-          <input type="time" class="break-end" value="13:00" style="padding: 6px; font-size: 14px; flex: 1;">
-          <label class="switch" style="transform: scale(0.8); margin: 0 4px;">
-            <input type="checkbox" class="break-enabled" checked>
-            <span class="slider"></span>
-          </label>
-          <button type="button" class="btn-danger remove-break" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">✕</button>
-        </div>
-      `;
-      container.insertAdjacentHTML('beforeend', html);
-    });
-
-    document.getElementById('breaksContainer').addEventListener('click', (e) => {
-      if (e.target.classList.contains('remove-break')) {
-        e.target.closest('.break-item').remove();
-      }
-    });
-
-    // --- Core Settings Manager ---
-    function loadSettingsToForm() {
-      document.getElementById('salaryType').value = config.salaryType;
-      document.getElementById('salaryAmount').value = config.salaryAmount;
-      document.getElementById('workStart').value = config.workStart;
-      document.getElementById('workEnd').value = config.workEnd;
-      document.getElementById('decimalPlaces').value = config.decimalPlaces;
-
-      renderBreaks(config.breaks);
-      renderPaymentMethods();
-
+      // 工作日
       document.querySelectorAll('.day-chip').forEach(chip => {
-        const day = parseInt(chip.dataset.day);
-        if (config.workDays.includes(day)) chip.classList.add('active');
+        if (config.workDays.includes(parseInt(chip.dataset.day))) chip.classList.add('active');
         else chip.classList.remove('active');
       });
     }
-
-    document.querySelectorAll('.day-chip').forEach(chip => {
-      chip.addEventListener('click', () => chip.classList.toggle('active'));
-    });
 
     document.getElementById('saveSettingsBtn').addEventListener('click', () => {
       config.salaryType = document.getElementById('salaryType').value;
@@ -989,86 +874,44 @@
       config.workStart = document.getElementById('workStart').value;
       config.workEnd = document.getElementById('workEnd').value;
       config.decimalPlaces = parseInt(document.getElementById('decimalPlaces').value);
-
-      const newBreaks = [];
-      document.querySelectorAll('.break-item').forEach(item => {
-        newBreaks.push({
-          id: item.dataset.id,
-          start: item.querySelector('.break-start').value,
-          end: item.querySelector('.break-end').value,
-          enabled: item.querySelector('.break-enabled').checked
-        });
-      });
-      config.breaks = newBreaks;
-
-      const activeDays = [];
-      document.querySelectorAll('.day-chip.active').forEach(chip => {
-        activeDays.push(parseInt(chip.dataset.day));
-      });
-      config.workDays = activeDays;
-
-      saveConfig();
-      alert('✅ 基礎設定已成功更新！');
-    });
-
-    // --- Utility Functions ---
-    document.getElementById('exportCsvBtn').addEventListener('click', () => {
-      if (expenses.length === 0) {
-        alert('目前無任何記帳紀錄可供匯出。');
-        return;
+      config.otMultiplier = parseFloat(document.getElementById('otMultiplier').value) || 1.5;
+      
+      if (config.salaryType === 'monthly') {
+        config.monthWorkDays = parseFloat(document.getElementById('monthWorkDays').value) || 22;
+        config.cycleStartDay = parseInt(document.getElementById('cycleStart').value) || 1;
+        config.payDay = parseInt(document.getElementById('payDay').value) || 1;
       }
-      let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
-      csvContent += "日期,時間,支付方式,金額,備註\n";
-      expenses.forEach(item => {
-        csvContent += `"${item.date}","${item.time}","${item.payment}","${item.amount}","${item.note || ''}"\n`;
-      });
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `WorkTimePay_Backup_${getTodayKey()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+
+      config.breaks = Array.from(document.querySelectorAll('.break-item')).map(item => ({
+        id: item.dataset.id, start: item.querySelector('.break-start').value,
+        end: item.querySelector('.break-end').value, enabled: item.querySelector('.break-enabled').checked
+      }));
+      config.workDays = Array.from(document.querySelectorAll('.day-chip.active')).map(chip => parseInt(chip.dataset.day));
+
+      saveConfig(); alert('✅ 設定已成功更新！');
     });
 
-    document.getElementById('clearDataBtn').addEventListener('click', () => {
-      if (confirm('確定要清除所有本地儲存嘅資料？（此動作無法復原）')) {
-        localStorage.clear();
-        config = { ...defaultConfig };
-        expenses = [];
-        loadSettingsToForm();
-        renderExpenseList();
-        alert('資料已清空！');
-      }
-    });
-
+    // Simple Event bindings
+    document.querySelectorAll('.day-chip').forEach(chip => chip.addEventListener('click', () => chip.classList.toggle('active')));
+    document.getElementById('paymentListContainer').addEventListener('click', (e) => { if (e.target.classList.contains('delete-btn')) { config.paymentMethods.splice(parseInt(e.target.dataset.index), 1); saveConfig(); loadSettingsToForm(); }});
+    document.getElementById('addPaymentBtn').addEventListener('click', () => { const val = document.getElementById('newPaymentInput').value.trim(); if (val) { config.paymentMethods.push(val); document.getElementById('newPaymentInput').value = ''; saveConfig(); loadSettingsToForm(); }});
+    document.getElementById('addBreakBtn').addEventListener('click', () => { const html = `<div class="break-item" data-id="${Date.now()}"><input type="time" class="break-start" value="12:00" style="padding: 6px; font-size: 14px; flex: 1;"><span style="color: var(--text-sub);">-</span><input type="time" class="break-end" value="13:00" style="padding: 6px; font-size: 14px; flex: 1;"><label class="switch" style="transform: scale(0.8); margin: 0 4px;"><input type="checkbox" class="break-enabled" checked><span class="slider"></span></label><button type="button" class="btn-danger remove-break" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">✕</button></div>`; document.getElementById('breaksContainer').insertAdjacentHTML('beforeend', html); });
+    document.getElementById('breaksContainer').addEventListener('click', (e) => { if (e.target.classList.contains('remove-break')) e.target.closest('.break-item').remove(); });
+    document.getElementById('clearDataBtn').addEventListener('click', () => { if (confirm('確定要清除所有本地儲存嘅資料？（此動作無法復原）')) { localStorage.clear(); location.reload(); }});
+    
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-        btn.classList.add('active');
-        document.getElementById(btn.dataset.tab).classList.add('active');
+        btn.classList.add('active'); document.getElementById(btn.dataset.tab).classList.add('active');
       });
     });
 
-    // --- PWA Offline Support (Inline Service Worker) ---
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then((reg) => {
-            console.log('✅ PWA Service Worker 註冊成功！', reg.scope);
-          })
-          .catch((err) => {
-            console.error('❌ Service Worker 註冊失敗:', err);
-          });
-      });
-    }
+    // PWA SW
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.error(err)); }); }
 
-    // Initializations
-    loadSettingsToForm();
-    renderExpenseList();
-    setInterval(tick, 30);
+    // Init
+    loadSettingsToForm(); renderExpenseList(); setInterval(tick, 30);
   </script>
 </body>
 </html>
