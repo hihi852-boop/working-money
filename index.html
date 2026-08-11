@@ -34,20 +34,8 @@
     header { display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; }
     .app-title { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px;}
     
-    /* 修正：將 Language Toggle 改成圓形地球按鈕 */
-    .lang-toggle { 
-      background: var(--border-color); 
-      width: 32px; 
-      height: 32px; 
-      border-radius: 50%; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      font-size: 18px; 
-      cursor: pointer; 
-      transition: transform 0.2s, background 0.2s;
-    }
-    .lang-toggle:active { transform: scale(0.9); background: #D1D1D6; }
+    .lang-btn { font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #E5E5EA; transition: 0.2s; }
+    .lang-btn:active { opacity: 0.7; transform: scale(0.9); }
 
     .status-badge { font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; }
     .status-badge.working { background: rgba(52, 199, 89, 0.15); color: var(--success); }
@@ -128,8 +116,7 @@
     <header>
       <div class="app-title">開工計 <span style="font-size: 16px; color: var(--text-sub); font-weight: 600;">WorkTime Pay</span></div>
       <div style="display: flex; gap: 10px; align-items: center;">
-        <!-- 修正：地球圖標 (Emoji) -->
-        <div id="langToggle" class="lang-toggle" title="切換語言 / Switch Language">🌐</div>
+        <div id="openLangBtn" class="lang-btn">🌐</div>
         <div id="statusBadge" class="status-badge off">
           <span class="status-dot"></span>
           <span id="statusText" data-i18n="status_off">已收工</span>
@@ -296,8 +283,8 @@
         <div class="form-group">
           <label data-i18n="decimals">顯示小數位數</label>
           <select id="decimalPlaces">
-            <option value="0">0位</option><option value="1">1位</option>
-            <option value="2" selected>2位</option><option value="3">3位</option><option value="4">4位</option>
+            <option value="0">0</option><option value="1">1</option>
+            <option value="2" selected>2</option><option value="3">3</option><option value="4">4</option>
           </select>
         </div>
 
@@ -346,6 +333,19 @@
     </div>
   </div>
 
+  <!-- Language Selection Modal -->
+  <div id="langModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 320px; padding: 20px;">
+      <h3 style="text-align: center; margin-bottom: 20px;">選擇語言 / Language / Язык</h3>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button class="btn btn-secondary lang-select-btn" data-lang="hk" style="font-size: 16px;">🇭🇰 廣東話 (Cantonese)</button>
+        <button class="btn btn-secondary lang-select-btn" data-lang="en" style="font-size: 16px;">🇬🇧 English (英文)</button>
+        <button class="btn btn-secondary lang-select-btn" data-lang="ru" style="font-size: 16px;">🇷🇺 Русский (俄文)</button>
+      </div>
+      <button id="closeLangBtn" class="btn" style="margin-top: 16px; background: transparent; color: var(--text-sub); border: 1px solid var(--border-color);">取消 / Cancel</button>
+    </div>
+  </div>
+
   <nav class="tab-bar">
     <button class="tab-btn active" data-tab="tab-dashboard">
       <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
@@ -362,7 +362,7 @@
   </nav>
 
   <script>
-    // --- i18n Language System ---
+    // --- i18n Language System (HK, EN, RU) ---
     const dict = {
       hk: {
         status_off: '已收工', status_leave: '休假中', status_not_started: '未開工', status_resting: '休息中 ☕', status_working: '上班中 🔥', status_ot: 'OT 加班中 🔥',
@@ -385,19 +385,39 @@
         workdays: 'Work Days', breaks_title: 'Break Times (Auto-pause)', add_btn: '+ Add', decimals: 'Decimal Places', save_settings: 'Save Settings', payment_sort: '💳 Payment Methods', new_payment: 'Add Method',
         backup_title: '📦 Backup & Reset', export_csv: 'Export CSV Backup', reset_today: '🔄 Reset Today\'s Data', reset_all: 'Clear All Local Data', tab_dashboard: 'Dashboard', tab_expense: 'Expenses', tab_settings: 'Settings',
         summary_title: '📝 Daily Summary', close_summary: 'Close Summary', slack_earned_lbl: '🐍 Slack Earned', ot_earned_lbl: '🔥 OT Earned', confirm_reset_today: 'Reset all data for TODAY?', confirm_reset_all: 'Clear ALL data? Cannot be undone!'
+      },
+      ru: {
+        status_off: 'Рабочий день окончен', status_leave: 'В отпуске', status_not_started: 'Не начато', status_resting: 'Отдых ☕', status_working: 'Работаю 🔥', status_ot: 'Сверхурочные 🔥',
+        gross: 'Грязными за сегодня', net: 'Чистыми за сегодня', sec_rate: '⚡ Ставка: $', per_sec: '/ сек', progress: 'Прогресс смены', expense: 'Расходы за сегодня',
+        slack_title: '🐍 Таймер безделья', slack_earned: '(Заработано $', slack_btn_start: 'Начать', slack_btn_stop: 'Стоп', ot_title: '🔥 Сверхурочные (OT)', ot_desc: 'Зарабатывать после смены',
+        expense_list: '📋 История расходов', no_expense: 'Сегодня нет расходов', btn_summary: '📝 Итоги дня', add_expense: '➕ Добавить расход', note: 'Заметка', note_ph: 'напр., Автобус, Обед',
+        payment: 'Способ оплаты', amount: 'Сумма ($)', save_expense: 'Сохранить расход', settings_title: '⚙️ Зарплата и настройки', salary_type: 'Тип зарплаты', monthly: 'За месяц', daily: 'За день', hourly: 'За час',
+        monthly_days: 'Рабочих дней в месяце', cycle_start: 'Начало периода', pay_day: 'День зарплаты', shift_start: 'Начало смены', shift_end: 'Конец смены', ot_rate_title: 'Ставка за сверхурочные', ot_10: '1.0x (Обычная)', ot_15: '1.5x', ot_20: '2.0x', ot_custom: 'Своя ставка ($/час)',
+        workdays: 'Рабочие дни', breaks_title: 'Перерывы (Автопауза)', add_btn: '+ Добавить', decimals: 'Знаки после запятой', save_settings: 'Сохранить настройки', payment_sort: '💳 Способы оплаты', new_payment: 'Добавить способ',
+        backup_title: '📦 Резервное копирование', export_csv: 'Экспорт в CSV', reset_today: '🔄 Сбросить данные за сегодня', reset_all: 'Удалить все данные', tab_dashboard: 'Главная', tab_expense: 'Расходы', tab_settings: 'Настройки',
+        summary_title: '📝 Итоги дня', close_summary: 'Закрыть итоги', slack_earned_lbl: '🐍 Заработано на безделье', ot_earned_lbl: '🔥 Заработано на OT', confirm_reset_today: 'Сбросить все данные за СЕГОДНЯ?', confirm_reset_all: 'Удалить ВСЕ данные? Отменить невозможно!'
       }
     };
     
     let currentLang = localStorage.getItem('wtp_lang') || 'hk';
     function t(key) { return dict[currentLang][key] || key; }
+    
     function applyLang() {
       document.querySelectorAll('[data-i18n]').forEach(el => el.innerText = t(el.dataset.i18n));
       document.querySelectorAll('[data-i18n-ph]').forEach(el => el.placeholder = t(el.dataset.i18nPh));
       initSlackUI(); renderExpenseList();
     }
-    document.getElementById('langToggle').addEventListener('click', () => {
-      currentLang = currentLang === 'hk' ? 'en' : 'hk';
-      localStorage.setItem('wtp_lang', currentLang); applyLang();
+
+    // Language Modal Logic
+    document.getElementById('openLangBtn').addEventListener('click', () => { document.getElementById('langModal').style.display = 'flex'; });
+    document.getElementById('closeLangBtn').addEventListener('click', () => { document.getElementById('langModal').style.display = 'none'; });
+    document.querySelectorAll('.lang-select-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        currentLang = e.target.dataset.lang;
+        localStorage.setItem('wtp_lang', currentLang);
+        applyLang();
+        document.getElementById('langModal').style.display = 'none';
+      });
     });
 
     // --- State Config ---
@@ -508,9 +528,8 @@
       document.getElementById('perSecondRate').innerText = (isOT ? otRatePerSec : ratePerSecond).toFixed(4);
 
       let curSlack = slackData.accumulatedSec;
-      if (slackData.isSlacking) {
-        curSlack += Math.max(0, Math.floor(Date.now()/1000) - slackData.lastStartSec);
-      }
+      if (slackData.isSlacking) curSlack += Math.max(0, Math.floor(Date.now()/1000) - slackData.lastStartSec);
+      
       globalSlackEarned = curSlack * ratePerSecond;
       globalOtEarned = otEarned;
       document.getElementById('slackTime').innerText = formatTime(curSlack);
