@@ -32,11 +32,12 @@
     .app-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 12px; }
 
     /* Header Layout */
-    header { display: flex; justify-content: space-between; align-items: center; padding: 8px 4px 16px 4px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 8px 4px 14px 4px; }
     
-    .title-group { display: flex; align-items: center; gap: 10px; }
-    .main-title { font-size: 30px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.1; display: flex; flex-direction: column; }
-    .sub-title { font-size: 17px; font-weight: 700; color: var(--text-sub); line-height: 1.25; display: flex; flex-direction: column; justify-content: flex-end; padding-top: 4px; }
+    .title-container { display: flex; flex-direction: column; gap: 2px; }
+    .main-title { font-size: 25px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.15; display: flex; align-items: baseline; gap: 6px; color: var(--text-main); }
+    .version-tag { font-size: 14px; font-weight: 700; color: var(--text-sub); }
+    .sub-title { font-size: 15px; font-weight: 600; color: var(--text-sub); line-height: 1.2; }
     
     .lang-toggle { 
       background: #E5E5EA; width: 36px; height: 36px; border-radius: 50%;
@@ -84,6 +85,7 @@
 
     .expense-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; max-height: 250px; overflow-y: auto; }
     .expense-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #FAFAFC; border-radius: 10px; font-size: 14px; }
+    .expense-info { display: flex; flex-direction: column; }
     .expense-title { font-weight: 600; }
     .expense-meta { font-size: 11px; color: var(--text-sub); }
     .expense-amount { font-weight: 700; color: var(--danger); font-variant-numeric: tabular-nums; }
@@ -122,15 +124,12 @@
   <div class="app-container">
     <!-- Top Header -->
     <header>
-      <div class="title-group">
-        <div id="mainTitle" class="main-title">
-          <span data-i18n="title_1">開工</span>
-          <span data-i18n="title_2">計</span>
+      <div class="title-container">
+        <div class="main-title">
+          <span id="mainTitleText">開工計</span>
+          <span class="version-tag">v1.30</span>
         </div>
-        <div id="subTitle" class="sub-title">
-          <span>WorkTime</span>
-          <span>Pay</span>
-        </div>
+        <div id="subTitle" class="sub-title">WorkTime Pay</div>
       </div>
       <div style="display: flex; gap: 10px; align-items: center;">
         <div id="langToggle" class="lang-toggle" title="切換語言 / Switch Language">🌐</div>
@@ -171,17 +170,26 @@
         </div>
       </div>
 
-      <!-- Slack Timer -->
-      <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px;">
-        <div>
-          <div class="stat-title" style="font-weight: 600; color: var(--text-main);" data-i18n="slack_title">🐍 蛇王計時器</div>
-          <div class="stat-value" style="color: var(--primary); display: flex; align-items: baseline; gap: 6px;">
-            <span id="slackTime">00:00:00</span> 
-            <span style="font-size: 13px; font-weight: 500;"><span data-i18n="slack_earned">(袋咗 </span><span id="currencySymbolSlack">$</span><span id="slackMoney">0.00</span>)</span>
+      <!-- Slacking Card -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <div>
+            <div class="stat-title" style="font-weight: 700; color: var(--text-main);" data-i18n="slack_title">🐍 蛇王計時器</div>
+            <div class="stat-value" style="color: var(--primary); display: flex; align-items: baseline; gap: 6px; margin-top: 2px;">
+              <span id="slackTime">00:00:00</span> 
+              <span style="font-size: 13px; font-weight: 500;"><span data-i18n="slack_earned">(袋咗 </span><span id="currencySymbolSlack">$</span><span id="slackMoney">0.00</span>)</span>
+            </div>
           </div>
-          <div id="slackStatusHint" style="font-size: 11px; color: var(--warning); display: none;" data-i18n="slack_resting_hint">⏸️ 休息時段自動暫停計錢</div>
+          <div style="display: flex; gap: 6px;">
+            <button id="toggleSlackModalBtn" type="button" class="btn btn-secondary" style="width: auto; padding: 8px 12px; font-size: 12px; border-radius: 16px;" data-i18n="slack_add_session">+ 自訂時段</button>
+            <button id="slackBtn" type="button" class="btn" style="width: auto; padding: 8px 14px; font-size: 13px; border-radius: 16px;" data-i18n="slack_btn_start">開始</button>
+          </div>
         </div>
-        <button id="slackBtn" class="btn" style="width: auto; padding: 10px 20px; border-radius: 20px;" data-i18n="slack_btn_start">開始</button>
+        
+        <div id="slackStatusHint" style="font-size: 11px; color: var(--warning); display: none; margin-bottom: 6px;" data-i18n="slack_resting_hint">⏸️ 休息時段自動暫停計錢</div>
+
+        <!-- Custom Slacking Sessions List -->
+        <div id="slackSessionsContainer" style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;"></div>
       </div>
 
       <!-- OT Mode Toggle -->
@@ -342,6 +350,33 @@
     </div>
   </div>
 
+  <!-- Custom Slacking Session Modal -->
+  <div id="slackModal" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="margin-bottom: 12px; font-size: 17px;" data-i18n="slack_modal_title">➕ 新增自訂蛇王時段</h3>
+      <form id="addSlackSessionForm">
+        <div class="input-row form-group">
+          <div style="flex: 1;">
+            <label data-i18n="slack_session_start">開始時間</label>
+            <input type="time" id="slackSessionStart" value="10:30" required>
+          </div>
+          <div style="flex: 1;">
+            <label data-i18n="slack_session_end">結束時間</label>
+            <input type="time" id="slackSessionEnd" value="11:00" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label data-i18n="note">備註 (可選)</label>
+          <input type="text" id="slackSessionNote" placeholder="例如：去洗手間、買咖啡">
+        </div>
+        <div class="input-row">
+          <button type="button" id="closeSlackModalBtn" class="btn btn-secondary" style="flex: 1;" data-i18n="btn_cancel">取消</button>
+          <button type="submit" class="btn" style="flex: 1.5;" data-i18n="slack_btn_add">加入時段</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Summary Modal -->
   <div id="summaryModal" class="modal-overlay">
     <div class="modal-card">
@@ -383,10 +418,10 @@
     // --- i18n Language System (粵 / ENG / РУС) ---
     const dict = {
       hk: {
-        title_1: '開工', title_2: '計',
+        title_main: '開工計', sub_title: 'WorkTime Pay',
         status_off: '已收工', status_leave: '休假中', status_not_started: '未開工', status_resting: '休息中 ☕', status_working: '上班中 🔥', status_ot: 'OT 加班中 🔥',
         gross: '今日毛薪金 (Gross)', net: '今日累積淨賺 (Net)', sec_rate: '⚡ 秒薪: ', per_sec: '/ 秒', progress: '今日工時進度', expense: '今日返工開支 (Expenses)',
-        slack_title: '🐍 蛇王計時器', slack_earned: '(袋咗 ', slack_btn_start: '開始', slack_btn_stop: '停止', slack_resting_hint: '⏸️ 休息時段自動暫停計錢', ot_title: '🔥 加班 (OT) 模式', ot_desc: '收工後繼續自動計錢',
+        slack_title: '🐍 蛇王計時器', slack_earned: '(袋咗 ', slack_btn_start: '即時開始', slack_btn_stop: '停止計時', slack_add_session: '+ 自訂時段', slack_modal_title: '➕ 新增自訂蛇王時段', slack_session_start: '開始時間', slack_session_end: '結束時間', slack_btn_add: '加入時段', btn_cancel: '取消', slack_resting_hint: '⏸️ 休息時段自動暫停計錢', ot_title: '🔥 加班 (OT) 模式', ot_desc: '收工後繼續自動計錢',
         expense_list: '📋 今日開支紀錄', no_expense: '今日暫無記帳紀錄', btn_summary: '📝 產生今日總結', add_expense: '➕ 新增返工開支', note: '備註 / 項目', note_ph: '例如：搭車、食午餐',
         payment: '支付方式', amount: '金額', save_expense: '記帳落袋', settings_title: '⚙️ 薪酬與工時設定', currency_title: '貨幣單位 (Currency)', currency_custom: '自訂符號',
         salary_type: '計薪方式', monthly: '月薪 (Monthly)', daily: '日薪 (Daily)', hourly: '時薪 (Hourly)',
@@ -396,10 +431,10 @@
         summary_title: '📝 今日總結報告', close_summary: '收工！關閉總結', slack_earned_lbl: '🐍 蛇王袋咗', ot_earned_lbl: '🔥 OT 補水', confirm_reset_today: '確定要重設今日嘅所有數據？', confirm_reset_all: '確定清除所有資料？無法復原！'
       },
       en: {
-        title_1: 'Work', title_2: 'Time',
+        title_main: 'WorkTime Pay', sub_title: '',
         status_off: 'Off Work', status_leave: 'On Leave', status_not_started: 'Not Started', status_resting: 'Resting ☕', status_working: 'Working 🔥', status_ot: 'OT Mode 🔥',
         gross: 'Today Gross Earned', net: 'Today Net Earned', sec_rate: '⚡ Rate: ', per_sec: '/ sec', progress: 'Shift Progress', expense: 'Today Expenses',
-        slack_title: '🐍 Slacking Timer', slack_earned: '(Earned ', slack_btn_start: 'Start', slack_btn_stop: 'Stop', slack_resting_hint: '⏸️ Paused during break', ot_title: '🔥 Overtime (OT)', ot_desc: 'Keep earning after shift ends',
+        slack_title: '🐍 Slacking Tracker', slack_earned: '(Earned ', slack_btn_start: 'Start Live', slack_btn_stop: 'Stop Live', slack_add_session: '+ Custom', slack_modal_title: '➕ Add Custom Slacking Session', slack_session_start: 'Start Time', slack_session_end: 'End Time', slack_btn_add: 'Add Session', btn_cancel: 'Cancel', slack_resting_hint: '⏸️ Paused during break', ot_title: '🔥 Overtime (OT)', ot_desc: 'Keep earning after shift ends',
         expense_list: '📋 Expense History', no_expense: 'No expenses recorded today', btn_summary: '📝 Daily Summary', add_expense: '➕ Add Expense', note: 'Note / Item', note_ph: 'e.g., Bus, Lunch',
         payment: 'Payment Method', amount: 'Amount', save_expense: 'Save Expense', settings_title: '⚙️ Salary & Settings', currency_title: 'Currency Symbol', currency_custom: 'Custom',
         salary_type: 'Salary Type', monthly: 'Monthly', daily: 'Daily', hourly: 'Hourly',
@@ -409,10 +444,10 @@
         summary_title: '📝 Daily Summary', close_summary: 'Close Summary', slack_earned_lbl: '🐍 Slack Earned', ot_earned_lbl: '🔥 OT Earned', confirm_reset_today: 'Reset all data for TODAY?', confirm_reset_all: 'Clear ALL data? Cannot be undone!'
       },
       ru: {
-        title_1: 'Рабочее', title_2: 'Время',
+        title_main: 'Рабочее Время', sub_title: 'WorkTime Pay',
         status_off: 'Смена окончена', status_leave: 'Выходной', status_not_started: 'До начала', status_resting: 'Перерыв ☕', status_working: 'Работаем 🔥', status_ot: 'Сверхурочные 🔥',
         gross: 'Начислено (Gross)', net: 'Чистый доход (Net)', sec_rate: '⚡ Ставка: ', per_sec: '/ сек', progress: 'Прогресс смены', expense: 'Расходы за смену',
-        slack_title: '🐍 Таймер отдыха', slack_earned: '(Заработано: ', slack_btn_start: 'Старт', slack_btn_stop: 'Стоп', slack_resting_hint: '⏸️ Пауза во время перерыва', ot_title: '🔥 Режим переработки (OT)', ot_desc: 'Продолжать расчет после смены',
+        slack_title: '🐍 Таймер отдыха', slack_earned: '(Заработано: ', slack_btn_start: 'Старт', slack_btn_stop: 'Стоп', slack_add_session: '+ Интервал', slack_modal_title: '➕ Добавить интервал отдыха', slack_session_start: 'Начало', slack_session_end: 'Конец', slack_btn_add: 'Добавить', btn_cancel: 'Отмена', slack_resting_hint: '⏸️ Пауза во время перерыва', ot_title: '🔥 Режим переработки (OT)', ot_desc: 'Продолжать расчет после смены',
         expense_list: '📋 Расходы за смену', no_expense: 'Нет расходов за сегодня', btn_summary: '📝 Итоги смены', add_expense: '➕ Добавить расход', note: 'Название / Описание', note_ph: 'Например: обед, такси',
         payment: 'Способ оплаты', amount: 'Сумма', save_expense: 'Записать расход', settings_title: '⚙️ Настройки зарплаты и смены', currency_title: 'Валюта (Currency)', currency_custom: 'Свой символ',
         salary_type: 'Тип оплаты', monthly: 'В месяц (Monthly)', daily: 'В день (Daily)', hourly: 'В час (Hourly)',
@@ -433,9 +468,19 @@
       document.querySelectorAll('[data-i18n]').forEach(el => el.innerText = t(el.dataset.i18n));
       document.querySelectorAll('[data-i18n-ph]').forEach(el => el.placeholder = t(el.dataset.i18nPh));
       
-      document.getElementById('subTitle').style.display = currentLang === 'hk' ? 'flex' : 'none';
+      // Update Main and Sub Titles
+      document.getElementById('mainTitleText').innerText = t('title_main');
+      const subTitleEl = document.getElementById('subTitle');
+      if (currentLang === 'en') {
+        subTitleEl.style.display = 'none';
+      } else {
+        subTitleEl.style.display = 'block';
+        subTitleEl.innerText = t('sub_title');
+      }
+      
       initSlackUI();
       renderExpenseList();
+      renderSlackSessions();
     }
 
     document.getElementById('langToggle').addEventListener('click', () => {
@@ -486,11 +531,22 @@
       return `${logicalStart.getFullYear()}-${String(logicalStart.getMonth()+1).padStart(2,'0')}-${String(logicalStart.getDate()).padStart(2,'0')}`;
     }
 
-    let slackData = JSON.parse(localStorage.getItem('wtp_slack') || 'null');
-    if (!slackData || slackData.date !== getShiftDateKey()) {
-      slackData = { date: getShiftDateKey(), isSlacking: false, accumulatedSec: 0, lastTickMs: Date.now() };
+    // Slacking State Setup & Safe Migration
+    let rawSlack = JSON.parse(localStorage.getItem('wtp_slack') || 'null');
+    let slackData = {
+      date: getShiftDateKey(),
+      isSlacking: false,
+      liveAccumulatedSec: 0,
+      sessions: []
+    };
+    if (rawSlack && rawSlack.date === getShiftDateKey()) {
+      slackData.isSlacking = rawSlack.isSlacking || false;
+      slackData.liveAccumulatedSec = rawSlack.liveAccumulatedSec !== undefined ? rawSlack.liveAccumulatedSec : (rawSlack.accumulatedSec || 0);
+      slackData.sessions = rawSlack.sessions || [];
+    } else {
       localStorage.setItem('wtp_slack', JSON.stringify(slackData));
     }
+
     let otData = JSON.parse(localStorage.getItem('wtp_ot') || 'null');
     if (!otData || otData.date !== getShiftDateKey()) {
       otData = { date: getShiftDateKey(), enabled: false };
@@ -540,6 +596,22 @@
       return worked;
     }
 
+    // Helper: Calculate effective work seconds inside any custom interval excluding breaks
+    function getIntervalEffectiveSlackSec(s_start, s_end, shift_start, shift_end, breaks) {
+      let cur_start = Math.max(s_start, shift_start);
+      let cur_end = Math.min(s_end, shift_end);
+      if (cur_end <= cur_start) return 0;
+      let total = cur_end - cur_start;
+      for (let b of breaks) {
+        let overlap_start = Math.max(cur_start, b.start);
+        let overlap_end = Math.min(cur_end, b.end);
+        if (overlap_end > overlap_start) {
+          total -= (overlap_end - overlap_start);
+        }
+      }
+      return Math.max(0, total);
+    }
+
     // --- Main Realtime Render Loop (30ms) ---
     function tick() {
       const nowMs = Date.now();
@@ -582,20 +654,33 @@
         grossEarned += otEarned;
       }
 
-      // --- Slacking Logic: Auto-pause during breaks ---
+      // --- Slacking Live Stopwatch (Auto-pauses during break times) ---
       const slackHint = document.getElementById('slackStatusHint');
       if (slackData.isSlacking) {
         if (isResting) {
           slackHint.style.display = 'block';
         } else {
           slackHint.style.display = 'none';
-          slackData.accumulatedSec += deltaSec;
+          slackData.liveAccumulatedSec += deltaSec;
         }
       } else {
         slackHint.style.display = 'none';
       }
 
-      globalSlackEarned = slackData.accumulatedSec * ratePerSecond;
+      // --- Slacking Custom Sessions Calculation ---
+      let customSessionsEffectiveSec = 0;
+      if (slackData.sessions && slackData.sessions.length > 0) {
+        for (let s of slackData.sessions) {
+          let s_start = parseTime(s.start);
+          let s_end = parseTime(s.end);
+          if (end > 86400 && s_start < start) s_start += 86400;
+          if (s_end <= s_start) s_end += 86400;
+          customSessionsEffectiveSec += getIntervalEffectiveSlackSec(s_start, s_end, start, end, validBreaks);
+        }
+      }
+
+      const totalSlackSeconds = slackData.liveAccumulatedSec + customSessionsEffectiveSec;
+      globalSlackEarned = totalSlackSeconds * ratePerSecond;
       globalOtEarned = otEarned;
 
       const curSymbol = config.currency || '$';
@@ -611,7 +696,7 @@
       document.getElementById('todayExpense').innerText = curSymbol + todayExp.toFixed(2);
       document.getElementById('perSecondRate').innerText = (isOT ? otRatePerSec : ratePerSecond).toFixed(4);
 
-      document.getElementById('slackTime').innerText = formatTime(Math.floor(slackData.accumulatedSec));
+      document.getElementById('slackTime').innerText = formatTime(Math.floor(totalSlackSeconds));
       document.getElementById('slackMoney').innerText = globalSlackEarned.toFixed(2);
 
       let prog = 0;
@@ -623,7 +708,7 @@
       document.getElementById('progressBarFill').style.width = `${prog}%`;
     }
 
-    // --- Slacking Controls ---
+    // --- Slacking UI & Controls ---
     const slackBtn = document.getElementById('slackBtn');
     function initSlackUI() {
       if (slackData.isSlacking) {
@@ -641,12 +726,85 @@
       initSlackUI();
     });
 
-    // Save slack periodically
     setInterval(() => {
       if (slackData.isSlacking) {
         localStorage.setItem('wtp_slack', JSON.stringify(slackData));
       }
     }, 2000);
+
+    // Custom Sessions List Rendering
+    function renderSlackSessions() {
+      const container = document.getElementById('slackSessionsContainer');
+      const sessions = slackData.sessions || [];
+      if (sessions.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+      const { start, end, validBreaks } = resolveShiftTimes();
+      const totalWorkSec = getWorkedSeconds(end, start, end, validBreaks);
+      let dailySalary = 0;
+      if (config.salaryType === 'monthly') dailySalary = config.salaryAmount / (config.monthWorkDays || 22);
+      else if (config.salaryType === 'daily') dailySalary = config.salaryAmount;
+      else if (config.salaryType === 'hourly') dailySalary = config.salaryAmount * (totalWorkSec / 3600);
+      const ratePerSecond = totalWorkSec > 0 ? dailySalary / totalWorkSec : 0;
+      const curSymbol = config.currency || '$';
+
+      container.innerHTML = sessions.map(s => {
+        let s_start = parseTime(s.start);
+        let s_end = parseTime(s.end);
+        if (end > 86400 && s_start < start) s_start += 86400;
+        if (s_end <= s_start) s_end += 86400;
+        let effSec = getIntervalEffectiveSlackSec(s_start, s_end, start, end, validBreaks);
+        let earned = effSec * ratePerSecond;
+        let mins = Math.round(effSec / 60);
+
+        return `
+          <div class="expense-item" style="padding: 6px 10px; background: #F2F2F7; border-radius: 8px;">
+            <div class="expense-info">
+              <span style="font-size: 13px; font-weight: 600;">🐍 ${s.start} - ${s.end} ${s.note ? `<span style="font-weight: normal; color: var(--text-sub);">(${s.note})</span>` : ''}</span>
+              <span style="font-size: 11px; color: var(--text-sub);">${mins}m · ${curSymbol}${earned.toFixed(2)}</span>
+            </div>
+            <button type="button" class="delete-btn" onclick="deleteSlackSession('${s.id}')" style="font-size: 15px;">✕</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function deleteSlackSession(id) {
+      slackData.sessions = slackData.sessions.filter(s => s.id !== id);
+      localStorage.setItem('wtp_slack', JSON.stringify(slackData));
+      renderSlackSessions();
+    }
+
+    // Modal Events
+    document.getElementById('toggleSlackModalBtn').addEventListener('click', () => {
+      document.getElementById('slackModal').style.display = 'flex';
+    });
+    document.getElementById('closeSlackModalBtn').addEventListener('click', () => {
+      document.getElementById('slackModal').style.display = 'none';
+    });
+    document.getElementById('addSlackSessionForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const start = document.getElementById('slackSessionStart').value;
+      const end = document.getElementById('slackSessionEnd').value;
+      const note = document.getElementById('slackSessionNote').value.trim();
+
+      if (!start || !end) return;
+
+      if (!slackData.sessions) slackData.sessions = [];
+      slackData.sessions.push({
+        id: Date.now().toString(),
+        start,
+        end,
+        note
+      });
+
+      localStorage.setItem('wtp_slack', JSON.stringify(slackData));
+      renderSlackSessions();
+
+      document.getElementById('slackSessionNote').value = '';
+      document.getElementById('slackModal').style.display = 'none';
+    });
 
     // OT Toggle
     document.getElementById('otToggle').checked = otData.enabled;
@@ -743,6 +901,7 @@
 
       saveConfig();
       renderExpenseList();
+      renderSlackSessions();
     }
 
     function loadSettingsToForm() {
@@ -752,7 +911,6 @@
       document.getElementById('workEnd').value = config.workEnd;
       document.getElementById('decimalPlaces').value = config.decimalPlaces;
       
-      // Currency loading
       const curSelect = document.getElementById('currencySelect');
       const customCurInput = document.getElementById('customCurrencyInput');
       const standardCurrencies = ['$', '¥', '€', '£', '₽'];
@@ -774,10 +932,8 @@
       document.getElementById('cycleStart').value = config.cycleStartDay || 1;
       document.getElementById('payDay').value = config.payDay || 1;
 
-      // Payment methods
       renderPaymentListUI();
 
-      // Breaks
       document.getElementById('breaksContainer').innerHTML = config.breaks.map(b => `
         <div class="break-item" data-id="${b.id}">
           <input type="time" class="break-start" value="${b.start}" style="padding: 6px; font-size: 14px; flex: 1;">
@@ -880,13 +1036,14 @@
       if (confirm(t('confirm_reset_today'))) {
         expenses = expenses.filter(e => e.date !== getShiftDateKey());
         saveExpenses();
-        slackData = { date: getShiftDateKey(), isSlacking: false, accumulatedSec: 0, lastTickMs: Date.now() };
+        slackData = { date: getShiftDateKey(), isSlacking: false, liveAccumulatedSec: 0, sessions: [] };
         localStorage.setItem('wtp_slack', JSON.stringify(slackData));
         otData = { date: getShiftDateKey(), enabled: false };
         localStorage.setItem('wtp_ot', JSON.stringify(otData));
         document.getElementById('otToggle').checked = false;
         initSlackUI();
         renderExpenseList();
+        renderSlackSessions();
         alert('✅ Done!');
       }
     });
@@ -932,6 +1089,7 @@
     // Initialize App
     applyLang();
     loadSettingsToForm();
+    renderSlackSessions();
     setInterval(tick, 30);
   </script>
 </body>
