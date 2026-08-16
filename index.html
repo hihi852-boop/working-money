@@ -31,10 +31,19 @@
 
     .app-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 12px; }
 
-    header { display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; }
-    .app-title { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px;}
+    /* Header Layout */
+    header { display: flex; justify-content: space-between; align-items: center; padding: 8px 4px 16px 4px; }
     
-    .lang-toggle { background: var(--border-color); padding: 4px 10px; border-radius: 14px; font-size: 13px; font-weight: 700; color: var(--text-main); cursor: pointer; }
+    .title-group { display: flex; align-items: center; gap: 10px; }
+    .main-title { font-size: 30px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.1; display: flex; flex-direction: column; }
+    .sub-title { font-size: 17px; font-weight: 700; color: var(--text-sub); line-height: 1.25; display: flex; flex-direction: column; justify-content: flex-end; padding-top: 4px; }
+    
+    .lang-toggle { 
+      background: #E5E5EA; width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; 
+      transition: transform 0.1s;
+    }
+    .lang-toggle:active { transform: scale(0.92); }
 
     .status-badge { font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; }
     .status-badge.working { background: rgba(52, 199, 89, 0.15); color: var(--success); }
@@ -113,9 +122,18 @@
   <div class="app-container">
     <!-- Top Header -->
     <header>
-      <div class="app-title">開工計 <span style="font-size: 16px; color: var(--text-sub); font-weight: 600;">WorkTime Pay</span></div>
+      <div class="title-group">
+        <div id="mainTitle" class="main-title">
+          <span data-i18n="title_1">開工</span>
+          <span data-i18n="title_2">計</span>
+        </div>
+        <div id="subTitle" class="sub-title">
+          <span>WorkTime</span>
+          <span>Pay</span>
+        </div>
+      </div>
       <div style="display: flex; gap: 10px; align-items: center;">
-        <div id="langToggle" class="lang-toggle">ENG</div>
+        <div id="langToggle" class="lang-toggle" title="切換語言 / Switch Language">🌐</div>
         <div id="statusBadge" class="status-badge off">
           <span class="status-dot"></span>
           <span id="statusText" data-i18n="status_off">已收工</span>
@@ -128,10 +146,10 @@
       <div class="card ticker-card">
         <div class="ticker-label" data-i18n="gross">今日毛薪金 (Gross)</div>
         <div class="ticker-amount">
-          <span class="currency">$</span><span id="grossAmount">0.00</span>
+          <span class="currency" id="currencySymbolGross">$</span><span id="grossAmount">0.00</span>
         </div>
         <div class="rate-pill">
-          <span data-i18n="sec_rate">⚡ 秒薪: $</span><span id="perSecondRate">0.0000</span> <span data-i18n="per_sec">/ 秒</span>
+          <span data-i18n="sec_rate">⚡ 秒薪: </span><span id="currencySymbolRate">$</span><span id="perSecondRate">0.0000</span> <span data-i18n="per_sec">/ 秒</span>
         </div>
         <div class="progress-container">
           <div class="progress-info">
@@ -159,8 +177,9 @@
           <div class="stat-title" style="font-weight: 600; color: var(--text-main);" data-i18n="slack_title">🐍 蛇王計時器</div>
           <div class="stat-value" style="color: var(--primary); display: flex; align-items: baseline; gap: 6px;">
             <span id="slackTime">00:00:00</span> 
-            <span style="font-size: 13px; font-weight: 500;"><span data-i18n="slack_earned">(袋咗 $</span><span id="slackMoney">0.00</span>)</span>
+            <span style="font-size: 13px; font-weight: 500;"><span data-i18n="slack_earned">(袋咗 </span><span id="currencySymbolSlack">$</span><span id="slackMoney">0.00</span>)</span>
           </div>
+          <div id="slackStatusHint" style="font-size: 11px; color: var(--warning); display: none;" data-i18n="slack_resting_hint">⏸️ 休息時段自動暫停計錢</div>
         </div>
         <button id="slackBtn" class="btn" style="width: auto; padding: 10px 20px; border-radius: 20px;" data-i18n="slack_btn_start">開始</button>
       </div>
@@ -199,7 +218,7 @@
               <select id="expensePayment"></select>
             </div>
             <div style="flex: 1.5;">
-              <label data-i18n="amount">金額 ($)</label>
+              <label data-i18n="amount">金額</label>
               <input type="number" id="expenseAmount" step="0.1" placeholder="4.5" required>
             </div>
           </div>
@@ -214,6 +233,21 @@
         <h3 style="margin-bottom: 14px; font-size: 16px;" data-i18n="settings_title">⚙️ 薪酬與工時設定</h3>
         
         <div class="form-group">
+          <label data-i18n="currency_title">貨幣單位 (Currency)</label>
+          <div class="input-row">
+            <select id="currencySelect" style="flex: 1.2;">
+              <option value="$">$ (HKD / USD)</option>
+              <option value="¥">¥ (RMB / JPY)</option>
+              <option value="€">€ (EUR)</option>
+              <option value="£">£ (GBP)</option>
+              <option value="₽">₽ (RUB)</option>
+              <option value="custom" data-i18n="currency_custom">自訂符號</option>
+            </select>
+            <input type="text" id="customCurrencyInput" style="flex: 1; display: none;" placeholder="例如：MOP$" maxlength="6">
+          </div>
+        </div>
+
+        <div class="form-group">
           <label data-i18n="salary_type">計薪方式</label>
           <select id="salaryType">
             <option value="monthly" data-i18n="monthly">月薪 (Monthly)</option>
@@ -222,7 +256,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label data-i18n="amount">金額 ($)</label>
+          <label data-i18n="amount">金額</label>
           <input type="number" id="salaryAmount" value="25000">
         </div>
 
@@ -257,7 +291,7 @@
               <option value="2" data-i18n="ot_20">2.0x (雙工)</option>
               <option value="custom" data-i18n="ot_custom">自訂時薪 (Custom)</option>
             </select>
-            <input type="number" id="otCustomRate" style="flex: 1; display: none;" placeholder="$ / hr">
+            <input type="number" id="otCustomRate" style="flex: 1; display: none;" placeholder="$/hr">
           </div>
         </div>
 
@@ -286,8 +320,6 @@
             <option value="2" selected>2位</option><option value="3">3位</option><option value="4">4位</option>
           </select>
         </div>
-
-        <button id="saveSettingsBtn" class="btn" style="margin-top: 8px;" data-i18n="save_settings">儲存設定</button>
       </div>
 
       <div class="card">
@@ -348,97 +380,152 @@
   </nav>
 
   <script>
-    // --- i18n Language System ---
+    // --- i18n Language System (粵 / ENG / РУС) ---
     const dict = {
       hk: {
+        title_1: '開工', title_2: '計',
         status_off: '已收工', status_leave: '休假中', status_not_started: '未開工', status_resting: '休息中 ☕', status_working: '上班中 🔥', status_ot: 'OT 加班中 🔥',
-        gross: '今日毛薪金 (Gross)', net: '今日累積淨賺 (Net)', sec_rate: '⚡ 秒薪: $', per_sec: '/ 秒', progress: '今日工時進度', expense: '今日返工開支 (Expenses)',
-        slack_title: '🐍 蛇王計時器', slack_earned: '(袋咗 $', slack_btn_start: '開始', slack_btn_stop: '停止', ot_title: '🔥 加班 (OT) 模式', ot_desc: '收工後繼續自動計錢',
+        gross: '今日毛薪金 (Gross)', net: '今日累積淨賺 (Net)', sec_rate: '⚡ 秒薪: ', per_sec: '/ 秒', progress: '今日工時進度', expense: '今日返工開支 (Expenses)',
+        slack_title: '🐍 蛇王計時器', slack_earned: '(袋咗 ', slack_btn_start: '開始', slack_btn_stop: '停止', slack_resting_hint: '⏸️ 休息時段自動暫停計錢', ot_title: '🔥 加班 (OT) 模式', ot_desc: '收工後繼續自動計錢',
         expense_list: '📋 今日開支紀錄', no_expense: '今日暫無記帳紀錄', btn_summary: '📝 產生今日總結', add_expense: '➕ 新增返工開支', note: '備註 / 項目', note_ph: '例如：搭車、食午餐',
-        payment: '支付方式', amount: '金額 ($)', save_expense: '記帳落袋', settings_title: '⚙️ 薪酬與工時設定', salary_type: '計薪方式', monthly: '月薪 (Monthly)', daily: '日薪 (Daily)', hourly: '時薪 (Hourly)',
-        monthly_days: '本月實際工作天數', cycle_start: '計薪週期起點', pay_day: '出糧日', shift_start: '開工時間', shift_end: '收工時間', ot_rate_title: 'OT 加班時薪', ot_10: '1.0x (單工)', ot_15: '1.5x (個半)', ot_20: '2.0x (雙工)', ot_custom: '自訂時薪 (Custom)',
-        workdays: '工作日 (常規設定)', breaks_title: '休息時段 (自動暫停跳錢)', add_btn: '+ 新增', decimals: '顯示小數位數', save_settings: '儲存設定', payment_sort: '💳 支付方式排序', new_payment: '新增支付方式',
+        payment: '支付方式', amount: '金額', save_expense: '記帳落袋', settings_title: '⚙️ 薪酬與工時設定', currency_title: '貨幣單位 (Currency)', currency_custom: '自訂符號',
+        salary_type: '計薪方式', monthly: '月薪 (Monthly)', daily: '日薪 (Daily)', hourly: '時薪 (Hourly)',
+        monthly_days: '本月實際工作天數', cycle_start: '計薪週期起點', pay_day: '出糧日', shift_start: '開工時間', shift_end: '收工時間', ot_rate_title: 'OT 加班時薪', ot_10: '1.0x (單工)', ot_15: '1.5x (倍半)', ot_20: '2.0x (雙工)', ot_custom: '自訂時薪 (Custom)',
+        workdays: '工作日 (常規設定)', breaks_title: '休息時段 (自動暫停跳錢)', add_btn: '+ 新增', decimals: '顯示小數位數', payment_sort: '💳 支付方式排序', new_payment: '新增支付方式',
         backup_title: '📦 數據備份與管理', export_csv: '匯出 CSV 備份', reset_today: '🔄 重設是日數據', reset_all: '重置所有本地資料', tab_dashboard: '即時跳錢', tab_expense: '返工記帳', tab_settings: '設定',
         summary_title: '📝 今日總結報告', close_summary: '收工！關閉總結', slack_earned_lbl: '🐍 蛇王袋咗', ot_earned_lbl: '🔥 OT 補水', confirm_reset_today: '確定要重設今日嘅所有數據？', confirm_reset_all: '確定清除所有資料？無法復原！'
       },
       en: {
+        title_1: 'Work', title_2: 'Time',
         status_off: 'Off Work', status_leave: 'On Leave', status_not_started: 'Not Started', status_resting: 'Resting ☕', status_working: 'Working 🔥', status_ot: 'OT Mode 🔥',
-        gross: 'Today Gross Earned', net: 'Today Net Earned', sec_rate: '⚡ Rate: $', per_sec: '/ sec', progress: 'Shift Progress', expense: 'Today Expenses',
-        slack_title: '🐍 Slacking Timer', slack_earned: '(Earned $', slack_btn_start: 'Start', slack_btn_stop: 'Stop', ot_title: '🔥 Overtime (OT)', ot_desc: 'Keep earning after shift ends',
+        gross: 'Today Gross Earned', net: 'Today Net Earned', sec_rate: '⚡ Rate: ', per_sec: '/ sec', progress: 'Shift Progress', expense: 'Today Expenses',
+        slack_title: '🐍 Slacking Timer', slack_earned: '(Earned ', slack_btn_start: 'Start', slack_btn_stop: 'Stop', slack_resting_hint: '⏸️ Paused during break', ot_title: '🔥 Overtime (OT)', ot_desc: 'Keep earning after shift ends',
         expense_list: '📋 Expense History', no_expense: 'No expenses recorded today', btn_summary: '📝 Daily Summary', add_expense: '➕ Add Expense', note: 'Note / Item', note_ph: 'e.g., Bus, Lunch',
-        payment: 'Payment Method', amount: 'Amount ($)', save_expense: 'Save Expense', settings_title: '⚙️ Salary & Settings', salary_type: 'Salary Type', monthly: 'Monthly', daily: 'Daily', hourly: 'Hourly',
+        payment: 'Payment Method', amount: 'Amount', save_expense: 'Save Expense', settings_title: '⚙️ Salary & Settings', currency_title: 'Currency Symbol', currency_custom: 'Custom',
+        salary_type: 'Salary Type', monthly: 'Monthly', daily: 'Daily', hourly: 'Hourly',
         monthly_days: 'Work Days this Month', cycle_start: 'Cycle Start Date', pay_day: 'Pay Day', shift_start: 'Start Time', shift_end: 'End Time', ot_rate_title: 'OT Hourly Rate', ot_10: '1.0x (Standard)', ot_15: '1.5x', ot_20: '2.0x', ot_custom: 'Custom ($/hr)',
-        workdays: 'Work Days', breaks_title: 'Break Times (Auto-pause)', add_btn: '+ Add', decimals: 'Decimal Places', save_settings: 'Save Settings', payment_sort: '💳 Payment Methods', new_payment: 'Add Method',
+        workdays: 'Work Days', breaks_title: 'Break Times (Auto-pause)', add_btn: '+ Add', decimals: 'Decimal Places', payment_sort: '💳 Payment Methods', new_payment: 'Add Method',
         backup_title: '📦 Backup & Reset', export_csv: 'Export CSV Backup', reset_today: '🔄 Reset Today\'s Data', reset_all: 'Clear All Local Data', tab_dashboard: 'Dashboard', tab_expense: 'Expenses', tab_settings: 'Settings',
         summary_title: '📝 Daily Summary', close_summary: 'Close Summary', slack_earned_lbl: '🐍 Slack Earned', ot_earned_lbl: '🔥 OT Earned', confirm_reset_today: 'Reset all data for TODAY?', confirm_reset_all: 'Clear ALL data? Cannot be undone!'
+      },
+      ru: {
+        title_1: 'Рабочее', title_2: 'Время',
+        status_off: 'Смена окончена', status_leave: 'Выходной', status_not_started: 'До начала', status_resting: 'Перерыв ☕', status_working: 'Работаем 🔥', status_ot: 'Сверхурочные 🔥',
+        gross: 'Начислено (Gross)', net: 'Чистый доход (Net)', sec_rate: '⚡ Ставка: ', per_sec: '/ сек', progress: 'Прогресс смены', expense: 'Расходы за смену',
+        slack_title: '🐍 Таймер отдыха', slack_earned: '(Заработано: ', slack_btn_start: 'Старт', slack_btn_stop: 'Стоп', slack_resting_hint: '⏸️ Пауза во время перерыва', ot_title: '🔥 Режим переработки (OT)', ot_desc: 'Продолжать расчет после смены',
+        expense_list: '📋 Расходы за смену', no_expense: 'Нет расходов за сегодня', btn_summary: '📝 Итоги смены', add_expense: '➕ Добавить расход', note: 'Название / Описание', note_ph: 'Например: обед, такси',
+        payment: 'Способ оплаты', amount: 'Сумма', save_expense: 'Записать расход', settings_title: '⚙️ Настройки зарплаты и смены', currency_title: 'Валюта (Currency)', currency_custom: 'Свой символ',
+        salary_type: 'Тип оплаты', monthly: 'В месяц (Monthly)', daily: 'В день (Daily)', hourly: 'В час (Hourly)',
+        monthly_days: 'Рабочих дней в месяце', cycle_start: 'Начало расчетного периода', pay_day: 'День зарплаты', shift_start: 'Начало смены', shift_end: 'Конец смены', ot_rate_title: 'Ставка сверхурочных (OT)', ot_10: '1.0x (Одинарная)', ot_15: '1.5x (Полуторная)', ot_20: '2.0x (Двойная)', ot_custom: 'Своя ставка (Custom)',
+        workdays: 'Рабочие дни', breaks_title: 'Перерывы (Авто-пауза)', add_btn: '+ Добавить', decimals: 'Знаков после запятой', payment_sort: '💳 Способы оплаты', new_payment: 'Добавить способ',
+        backup_title: '📦 Резервные копии', export_csv: 'Экспорт в CSV', reset_today: '🔄 Сбросить данные за сегодня', reset_all: 'Сбросить все данные', tab_dashboard: 'Таймер', tab_expense: 'Расходы', tab_settings: 'Настройки',
+        summary_title: '📝 Отчет за смену', close_summary: 'Закрыть отчет', slack_earned_lbl: '🐍 Получено за отдых', ot_earned_lbl: '🔥 Сверхурочные', confirm_reset_today: 'Сбросить данные за СЕГОДНЯ?', confirm_reset_all: 'Очистить ВСЕ локальные данные? Это действие необратимо!'
       }
     };
-    
+
+    const langCycle = ['hk', 'en', 'ru'];
     let currentLang = localStorage.getItem('wtp_lang') || 'hk';
-    function t(key) { return dict[currentLang][key] || key; }
+    if (!dict[currentLang]) currentLang = 'hk';
+
+    function t(key) { return (dict[currentLang] && dict[currentLang][key]) || dict['hk'][key] || key; }
+
     function applyLang() {
       document.querySelectorAll('[data-i18n]').forEach(el => el.innerText = t(el.dataset.i18n));
       document.querySelectorAll('[data-i18n-ph]').forEach(el => el.placeholder = t(el.dataset.i18nPh));
-      document.getElementById('langToggle').innerText = currentLang === 'hk' ? 'ENG' : '粵';
-      initSlackUI(); renderExpenseList();
+      
+      document.getElementById('subTitle').style.display = currentLang === 'hk' ? 'flex' : 'none';
+      initSlackUI();
+      renderExpenseList();
     }
+
     document.getElementById('langToggle').addEventListener('click', () => {
-      currentLang = currentLang === 'hk' ? 'en' : 'hk';
-      localStorage.setItem('wtp_lang', currentLang); applyLang();
+      let idx = langCycle.indexOf(currentLang);
+      currentLang = langCycle[(idx + 1) % langCycle.length];
+      localStorage.setItem('wtp_lang', currentLang);
+      applyLang();
     });
 
-    // --- State Config ---
+    // --- State Configuration ---
     const defaultConfig = {
-      salaryType: 'monthly', salaryAmount: 25000, workStart: '09:00', workEnd: '18:00', workDays: [1,2,3,4,5], decimalPlaces: 2,
-      otType: '1.5', otCustomRate: 100, monthWorkDays: 22, cycleStartDay: 1, payDay: 1,
-      breaks: [{ id: 'b1', start: '12:00', end: '13:00', enabled: true }], paymentMethods: ['八達通', 'PayMe', '現金', '信用卡']
+      salaryType: 'monthly',
+      salaryAmount: 25000,
+      currency: '$',
+      workStart: '09:00',
+      workEnd: '18:00',
+      workDays: [1,2,3,4,5],
+      decimalPlaces: 2,
+      otType: '1.5',
+      otCustomRate: 100,
+      monthWorkDays: 22,
+      cycleStartDay: 1,
+      payDay: 1,
+      breaks: [{ id: 'b1', start: '12:00', end: '13:00', enabled: true }],
+      paymentMethods: ['八達通', 'PayMe', '現金', '信用卡']
     };
-    let config = { ...defaultConfig, ...JSON.parse(localStorage.getItem('wtp_config')) };
-    if (!config.breaks) config.breaks = defaultConfig.breaks;
-    if (!config.otType) config.otType = '1.5';
-    let expenses = JSON.parse(localStorage.getItem('wtp_expenses')) || [];
 
-    // --- Core Time & Overnight Logic ---
-    function parseTime(timeStr) { const [h, m] = timeStr.split(':').map(Number); return h * 3600 + m * 60; }
-    function getTodayKey() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-    function formatTime(s) { const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sc = Math.floor(s%60); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sc).padStart(2,'0')}`; }
-    
+    let config = { ...defaultConfig, ...JSON.parse(localStorage.getItem('wtp_config') || '{}') };
+    if (!config.breaks) config.breaks = defaultConfig.breaks;
+    if (!config.currency) config.currency = '$';
+    if (!config.otType) config.otType = '1.5';
+    let expenses = JSON.parse(localStorage.getItem('wtp_expenses') || '[]');
+
     function saveConfig() { localStorage.setItem('wtp_config', JSON.stringify(config)); }
     function saveExpenses() { localStorage.setItem('wtp_expenses', JSON.stringify(expenses)); }
-    
-    let slackData = JSON.parse(localStorage.getItem('wtp_slack')) || { date: getTodayKey(), isSlacking: false, lastStartSec: 0, accumulatedSec: 0 };
-    if (slackData.date !== getTodayKey()) { slackData = { date: getTodayKey(), isSlacking: false, lastStartSec: 0, accumulatedSec: 0 }; localStorage.setItem('wtp_slack', JSON.stringify(slackData)); }
-    let otData = JSON.parse(localStorage.getItem('wtp_ot')) || { date: getTodayKey(), enabled: false };
-    if (otData.date !== getTodayKey()) { otData = { date: getTodayKey(), enabled: false }; localStorage.setItem('wtp_ot', JSON.stringify(otData)); }
+
+    function parseTime(timeStr) { const [h, m] = timeStr.split(':').map(Number); return h * 3600 + m * 60; }
+    function formatTime(s) { const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sc = Math.floor(s%60); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sc).padStart(2,'0')}`; }
+
+    // Shift Date Key (Overnight Safe)
+    function getShiftDateKey() {
+      const startSec = parseTime(config.workStart);
+      const now = new Date();
+      const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+      let diff = (nowSec - startSec + 86400) % 86400;
+      if (diff > 86400 - (6 * 3600)) diff -= 86400;
+      const logicalStart = new Date(now.getTime() - diff * 1000);
+      return `${logicalStart.getFullYear()}-${String(logicalStart.getMonth()+1).padStart(2,'0')}-${String(logicalStart.getDate()).padStart(2,'0')}`;
+    }
+
+    let slackData = JSON.parse(localStorage.getItem('wtp_slack') || 'null');
+    if (!slackData || slackData.date !== getShiftDateKey()) {
+      slackData = { date: getShiftDateKey(), isSlacking: false, accumulatedSec: 0, lastTickMs: Date.now() };
+      localStorage.setItem('wtp_slack', JSON.stringify(slackData));
+    }
+    let otData = JSON.parse(localStorage.getItem('wtp_ot') || 'null');
+    if (!otData || otData.date !== getShiftDateKey()) {
+      otData = { date: getShiftDateKey(), enabled: false };
+      localStorage.setItem('wtp_ot', JSON.stringify(otData));
+    }
 
     let globalOtEarned = 0, globalSlackEarned = 0;
+    let lastTickTimestamp = Date.now();
 
-    // Resolve Overnights (+86400s)
     function resolveShiftTimes() {
       let start = parseTime(config.workStart);
       let end = parseTime(config.workEnd);
-      let isOvernight = false;
-      if (end <= start) { end += 86400; isOvernight = true; }
-      
+      if (end <= start) end += 86400;
+
       let now = new Date();
-      let currentSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds() + now.getMilliseconds() / 1000;
+      let nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds() + now.getMilliseconds() / 1000;
       let currentDay = now.getDay();
 
-      // If it's 2 AM and shift ended at 6 AM today (which started yesterday)
-      // Keep it relative to yesterday's start
-      if (isOvernight && currentSec < (end - 86400 + 7200)) { 
-        currentSec += 86400; 
-        currentDay = (currentDay - 1 + 7) % 7; 
-      }
+      let diff = (nowSec - start + 86400) % 86400;
+      if (diff > 86400 - (6 * 3600)) diff -= 86400;
+      let currentSec = start + diff;
+
+      let logicalDay = currentDay;
+      if (currentSec >= 86400) logicalDay = (currentDay - 1 + 7) % 7;
+      else if (currentSec < 0) logicalDay = (currentDay + 1) % 7;
 
       let validBreaks = config.breaks.filter(b => b.enabled).map(b => {
-        let bs = parseTime(b.start), be = parseTime(b.end);
-        if (isOvernight && bs < start) bs += 86400;
-        if (be < bs) be += 86400;
+        let bs = parseTime(b.start);
+        let be = parseTime(b.end);
+        if (end > 86400 && bs < start) bs += 86400;
+        if (be <= bs) be += 86400;
         return { start: bs, end: be };
       }).filter(b => b.start >= start && b.end <= end).sort((a,b) => a.start - b.start);
 
-      return { start, end, currentSec, currentDay, validBreaks };
+      return { start, end, currentSec, logicalDay, validBreaks };
     }
 
     function getWorkedSeconds(current, start, end, breaks) {
@@ -453,8 +540,13 @@
       return worked;
     }
 
+    // --- Main Realtime Render Loop (30ms) ---
     function tick() {
-      const { start, end, currentSec, currentDay, validBreaks } = resolveShiftTimes();
+      const nowMs = Date.now();
+      const deltaSec = Math.max(0, (nowMs - lastTickTimestamp) / 1000);
+      lastTickTimestamp = nowMs;
+
+      const { start, end, currentSec, logicalDay, validBreaks } = resolveShiftTimes();
       const totalWorkSec = getWorkedSeconds(end, start, end, validBreaks);
 
       let dailySalary = 0;
@@ -473,7 +565,7 @@
       const statusText = document.getElementById('statusText');
 
       let grossEarned = 0, otEarned = 0;
-      const isWorkDay = config.workDays.includes(currentDay);
+      const isWorkDay = config.workDays.includes(logicalDay);
       let isResting = validBreaks.some(b => currentSec >= b.start && currentSec < b.end);
       let isOT = isWorkDay && otData.enabled && currentSec > end;
 
@@ -490,20 +582,36 @@
         grossEarned += otEarned;
       }
 
-      const todayExp = expenses.filter(i => i.date === getTodayKey()).reduce((s, i) => s + i.amount, 0);
+      // --- Slacking Logic: Auto-pause during breaks ---
+      const slackHint = document.getElementById('slackStatusHint');
+      if (slackData.isSlacking) {
+        if (isResting) {
+          slackHint.style.display = 'block';
+        } else {
+          slackHint.style.display = 'none';
+          slackData.accumulatedSec += deltaSec;
+        }
+      } else {
+        slackHint.style.display = 'none';
+      }
+
+      globalSlackEarned = slackData.accumulatedSec * ratePerSecond;
+      globalOtEarned = otEarned;
+
+      const curSymbol = config.currency || '$';
+      document.getElementById('currencySymbolGross').innerText = curSymbol;
+      document.getElementById('currencySymbolRate').innerText = curSymbol;
+      document.getElementById('currencySymbolSlack').innerText = curSymbol;
+
+      const currentShiftKey = getShiftDateKey();
+      const todayExp = expenses.filter(i => i.date === currentShiftKey).reduce((s, i) => s + i.amount, 0);
+      
       document.getElementById('grossAmount').innerText = grossEarned.toFixed(config.decimalPlaces);
-      document.getElementById('netAmount').innerText = '$' + (grossEarned - todayExp).toFixed(2);
-      document.getElementById('todayExpense').innerText = '$' + todayExp.toFixed(2);
+      document.getElementById('netAmount').innerText = curSymbol + (grossEarned - todayExp).toFixed(2);
+      document.getElementById('todayExpense').innerText = curSymbol + todayExp.toFixed(2);
       document.getElementById('perSecondRate').innerText = (isOT ? otRatePerSec : ratePerSecond).toFixed(4);
 
-      let curSlack = slackData.accumulatedSec;
-      if (slackData.isSlacking) {
-        // Simple slack tracking (doesn't span overnights complexly, just relies on real seconds passed)
-        curSlack += Math.max(0, Math.floor(Date.now()/1000) - slackData.lastStartSec);
-      }
-      globalSlackEarned = curSlack * ratePerSecond;
-      globalOtEarned = otEarned;
-      document.getElementById('slackTime').innerText = formatTime(curSlack);
+      document.getElementById('slackTime').innerText = formatTime(Math.floor(slackData.accumulatedSec));
       document.getElementById('slackMoney').innerText = globalSlackEarned.toFixed(2);
 
       let prog = 0;
@@ -515,51 +623,127 @@
       document.getElementById('progressBarFill').style.width = `${prog}%`;
     }
 
-    // --- UI Interactions ---
+    // --- Slacking Controls ---
     const slackBtn = document.getElementById('slackBtn');
     function initSlackUI() {
-      if (slackData.isSlacking) { slackBtn.innerText = t('slack_btn_stop'); slackBtn.className = 'btn btn-danger'; } 
-      else { slackBtn.innerText = t('slack_btn_start'); slackBtn.className = 'btn'; }
+      if (slackData.isSlacking) {
+        slackBtn.innerText = t('slack_btn_stop');
+        slackBtn.className = 'btn btn-danger';
+      } else {
+        slackBtn.innerText = t('slack_btn_start');
+        slackBtn.className = 'btn';
+      }
     }
+
     slackBtn.addEventListener('click', () => {
-      let nowS = Math.floor(Date.now()/1000);
-      if (slackData.isSlacking) { slackData.accumulatedSec += (nowS - slackData.lastStartSec); slackData.isSlacking = false; } 
-      else { slackData.lastStartSec = nowS; slackData.isSlacking = true; }
-      localStorage.setItem('wtp_slack', JSON.stringify(slackData)); initSlackUI();
+      slackData.isSlacking = !slackData.isSlacking;
+      localStorage.setItem('wtp_slack', JSON.stringify(slackData));
+      initSlackUI();
     });
 
-    document.getElementById('otToggle').checked = otData.enabled;
-    document.getElementById('otToggle').addEventListener('change', (e) => { otData.enabled = e.target.checked; localStorage.setItem('wtp_ot', JSON.stringify(otData)); });
+    // Save slack periodically
+    setInterval(() => {
+      if (slackData.isSlacking) {
+        localStorage.setItem('wtp_slack', JSON.stringify(slackData));
+      }
+    }, 2000);
 
+    // OT Toggle
+    document.getElementById('otToggle').checked = otData.enabled;
+    document.getElementById('otToggle').addEventListener('change', (e) => {
+      otData.enabled = e.target.checked;
+      localStorage.setItem('wtp_ot', JSON.stringify(otData));
+    });
+
+    // Daily Summary Modal
     document.getElementById('summaryBtn').addEventListener('click', () => {
-      document.getElementById('summaryDate').innerText = 'Date: ' + getTodayKey();
-      document.getElementById('sumGross').innerText = '$' + document.getElementById('grossAmount').innerText;
-      document.getElementById('sumExp').innerText = document.getElementById('todayExpense').innerText;
+      const curSymbol = config.currency || '$';
+      document.getElementById('summaryDate').innerText = 'Date: ' + getShiftDateKey();
+      document.getElementById('sumGross').innerText = curSymbol + document.getElementById('grossAmount').innerText;
+      document.getElementById('sumExp').innerText = curSymbol + document.getElementById('todayExpense').innerText.replace(curSymbol, '');
       document.getElementById('sumNet').innerText = document.getElementById('netAmount').innerText;
-      document.getElementById('sumOtEarned').innerText = `$${globalOtEarned.toFixed(2)}`;
-      document.getElementById('sumSlackEarned').innerText = `$${globalSlackEarned.toFixed(2)}`;
+      document.getElementById('sumOtEarned').innerText = `${curSymbol}${globalOtEarned.toFixed(2)}`;
+      document.getElementById('sumSlackEarned').innerText = `${curSymbol}${globalSlackEarned.toFixed(2)}`;
       document.getElementById('summaryModal').style.display = 'flex';
     });
     document.getElementById('closeSummaryBtn').addEventListener('click', () => document.getElementById('summaryModal').style.display = 'none');
 
-    // Expense
+    // Expense Logic
     function renderExpenseList() {
-      const today = getTodayKey(); const list = expenses.filter(i => i.date === today);
+      const curSymbol = config.currency || '$';
+      const today = getShiftDateKey();
+      const list = expenses.filter(i => i.date === today);
       const el = document.getElementById('expenseList');
       if (list.length === 0) return el.innerHTML = `<div style="text-align:center; color:#8E8E93; padding:12px; font-size:13px;">${t('no_expense')}</div>`;
-      el.innerHTML = list.map(i => `<div class="expense-item"><div class="expense-info"><span class="expense-title">${i.note||i.payment}</span><span class="expense-meta">${i.time} · ${i.payment}</span></div><div style="display:flex; align-items:center; gap:8px;"><span class="expense-amount">-$${i.amount.toFixed(2)}</span><button style="color:#FF3B30; background:none; border:none; padding:4px; font-size:16px; cursor:pointer;" onclick="deleteExpense('${i.id}')">✕</button></div></div>`).join('');
+      el.innerHTML = list.map(i => `
+        <div class="expense-item">
+          <div class="expense-info">
+            <span class="expense-title">${i.note||i.payment}</span>
+            <span class="expense-meta">${i.time} · ${i.payment}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="expense-amount">-${curSymbol}${i.amount.toFixed(2)}</span>
+            <button style="color:#FF3B30; background:none; border:none; padding:4px; font-size:16px; cursor:pointer;" onclick="deleteExpense('${i.id}')">✕</button>
+          </div>
+        </div>
+      `).join('');
     }
     function deleteExpense(id) { expenses = expenses.filter(i => i.id !== id); saveExpenses(); renderExpenseList(); }
+
     document.getElementById('expenseForm').addEventListener('submit', (e) => {
-      e.preventDefault(); const amt = parseFloat(document.getElementById('expenseAmount').value); if (isNaN(amt) || amt<=0) return;
-      expenses.unshift({ id: Date.now().toString(), date: getTodayKey(), time: `${String(new Date().getHours()).padStart(2,'0')}:${String(new Date().getMinutes()).padStart(2,'0')}`, amount: amt, payment: document.getElementById('expensePayment').value, note: document.getElementById('expenseNote').value });
-      saveExpenses(); renderExpenseList(); document.getElementById('expenseAmount').value = ''; document.getElementById('expenseNote').value = '';
+      e.preventDefault();
+      const amt = parseFloat(document.getElementById('expenseAmount').value);
+      if (isNaN(amt) || amt <= 0) return;
+      expenses.unshift({
+        id: Date.now().toString(),
+        date: getShiftDateKey(),
+        time: `${String(new Date().getHours()).padStart(2,'0')}:${String(new Date().getMinutes()).padStart(2,'0')}`,
+        amount: amt,
+        payment: document.getElementById('expensePayment').value,
+        note: document.getElementById('expenseNote').value
+      });
+      saveExpenses();
+      renderExpenseList();
+      document.getElementById('expenseAmount').value = '';
+      document.getElementById('expenseNote').value = '';
       document.querySelector('[data-tab="tab-dashboard"]').click();
     });
 
-    // Settings
-    document.getElementById('otType').addEventListener('change', (e) => { document.getElementById('otCustomRate').style.display = (e.target.value === 'custom') ? 'block' : 'none'; });
-    document.getElementById('salaryType').addEventListener('change', (e) => { document.getElementById('monthlyConfigSection').style.display = e.target.value === 'monthly' ? 'block' : 'none'; });
+    // --- Settings: Realtime Auto-Save Engine ---
+    function autoSaveSettings() {
+      config.salaryType = document.getElementById('salaryType').value;
+      config.salaryAmount = parseFloat(document.getElementById('salaryAmount').value) || 0;
+      config.workStart = document.getElementById('workStart').value;
+      config.workEnd = document.getElementById('workEnd').value;
+      config.decimalPlaces = parseInt(document.getElementById('decimalPlaces').value);
+      config.otType = document.getElementById('otType').value;
+      config.otCustomRate = parseFloat(document.getElementById('otCustomRate').value) || 100;
+      
+      const currVal = document.getElementById('currencySelect').value;
+      if (currVal === 'custom') {
+        config.currency = document.getElementById('customCurrencyInput').value.trim() || '$';
+      } else {
+        config.currency = currVal;
+      }
+
+      if (config.salaryType === 'monthly') {
+        config.monthWorkDays = parseFloat(document.getElementById('monthWorkDays').value) || 22;
+        config.cycleStartDay = parseInt(document.getElementById('cycleStart').value) || 1;
+        config.payDay = parseInt(document.getElementById('payDay').value) || 1;
+      }
+
+      config.breaks = Array.from(document.querySelectorAll('.break-item')).map(item => ({
+        id: item.dataset.id,
+        start: item.querySelector('.break-start').value,
+        end: item.querySelector('.break-end').value,
+        enabled: item.querySelector('.break-enabled').checked
+      }));
+
+      config.workDays = Array.from(document.querySelectorAll('.day-chip.active')).map(chip => parseInt(chip.dataset.day));
+
+      saveConfig();
+      renderExpenseList();
+    }
 
     function loadSettingsToForm() {
       document.getElementById('salaryType').value = config.salaryType;
@@ -568,6 +752,19 @@
       document.getElementById('workEnd').value = config.workEnd;
       document.getElementById('decimalPlaces').value = config.decimalPlaces;
       
+      // Currency loading
+      const curSelect = document.getElementById('currencySelect');
+      const customCurInput = document.getElementById('customCurrencyInput');
+      const standardCurrencies = ['$', '¥', '€', '£', '₽'];
+      if (standardCurrencies.includes(config.currency)) {
+        curSelect.value = config.currency;
+        customCurInput.style.display = 'none';
+      } else {
+        curSelect.value = 'custom';
+        customCurInput.value = config.currency;
+        customCurInput.style.display = 'block';
+      }
+
       document.getElementById('otType').value = config.otType;
       document.getElementById('otCustomRate').value = config.otCustomRate || 100;
       document.getElementById('otCustomRate').style.display = (config.otType === 'custom') ? 'block' : 'none';
@@ -577,54 +774,165 @@
       document.getElementById('cycleStart').value = config.cycleStartDay || 1;
       document.getElementById('payDay').value = config.payDay || 1;
 
-      document.getElementById('paymentListContainer').innerHTML = config.paymentMethods.map((p, i) => `<div class="sortable-item"><div style="display: flex; align-items: center; gap: 12px;"><span style="color: #C7C7CC; font-weight: bold; font-size: 18px;">≡</span><span style="font-weight: 500;">${p}</span></div><button type="button" class="delete-btn" data-index="${i}">×</button></div>`).join('');
-      document.getElementById('expensePayment').innerHTML = config.paymentMethods.map(p => `<option value="${p}">${p}</option>`).join('');
+      // Payment methods
+      renderPaymentListUI();
 
-      document.getElementById('breaksContainer').innerHTML = config.breaks.map(b => `<div class="break-item" data-id="${b.id}"><input type="time" class="break-start" value="${b.start}" style="padding: 6px; font-size: 14px; flex: 1;"><span style="color: var(--text-sub);">-</span><input type="time" class="break-end" value="${b.end}" style="padding: 6px; font-size: 14px; flex: 1;"><label class="switch" style="transform: scale(0.8); margin: 0 4px;"><input type="checkbox" class="break-enabled" ${b.enabled ? 'checked' : ''}><span class="slider"></span></label><button type="button" class="btn-danger remove-break" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">✕</button></div>`).join('');
+      // Breaks
+      document.getElementById('breaksContainer').innerHTML = config.breaks.map(b => `
+        <div class="break-item" data-id="${b.id}">
+          <input type="time" class="break-start" value="${b.start}" style="padding: 6px; font-size: 14px; flex: 1;">
+          <span style="color: var(--text-sub);">-</span>
+          <input type="time" class="break-end" value="${b.end}" style="padding: 6px; font-size: 14px; flex: 1;">
+          <label class="switch" style="transform: scale(0.8); margin: 0 4px;">
+            <input type="checkbox" class="break-enabled" ${b.enabled ? 'checked' : ''}>
+            <span class="slider"></span>
+          </label>
+          <button type="button" class="btn-danger remove-break" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">✕</button>
+        </div>
+      `).join('');
       
-      document.querySelectorAll('.day-chip').forEach(chip => { if(config.workDays.includes(parseInt(chip.dataset.day))) chip.classList.add('active'); else chip.classList.remove('active'); });
+      document.querySelectorAll('.day-chip').forEach(chip => {
+        if (config.workDays.includes(parseInt(chip.dataset.day))) chip.classList.add('active');
+        else chip.classList.remove('active');
+      });
     }
 
-    document.getElementById('saveSettingsBtn').addEventListener('click', () => {
-      config.salaryType = document.getElementById('salaryType').value;
-      config.salaryAmount = parseFloat(document.getElementById('salaryAmount').value) || 0;
-      config.workStart = document.getElementById('workStart').value;
-      config.workEnd = document.getElementById('workEnd').value;
-      config.decimalPlaces = parseInt(document.getElementById('decimalPlaces').value);
-      config.otType = document.getElementById('otType').value;
-      config.otCustomRate = parseFloat(document.getElementById('otCustomRate').value) || 100;
-      if (config.salaryType === 'monthly') { config.monthWorkDays = parseFloat(document.getElementById('monthWorkDays').value)||22; config.cycleStartDay = parseInt(document.getElementById('cycleStart').value)||1; config.payDay = parseInt(document.getElementById('payDay').value)||1; }
-      config.breaks = Array.from(document.querySelectorAll('.break-item')).map(item => ({ id: item.dataset.id, start: item.querySelector('.break-start').value, end: item.querySelector('.break-end').value, enabled: item.querySelector('.break-enabled').checked }));
-      config.workDays = Array.from(document.querySelectorAll('.day-chip.active')).map(chip => parseInt(chip.dataset.day));
-      saveConfig(); alert('✅ Settings Saved!');
+    function renderPaymentListUI() {
+      document.getElementById('paymentListContainer').innerHTML = config.paymentMethods.map((p, i) => `
+        <div class="sortable-item">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="color: #C7C7CC; font-weight: bold; font-size: 18px;">≡</span>
+            <span style="font-weight: 500;">${p}</span>
+          </div>
+          <button type="button" class="delete-btn" data-index="${i}">×</button>
+        </div>
+      `).join('');
+      document.getElementById('expensePayment').innerHTML = config.paymentMethods.map(p => `<option value="${p}">${p}</option>`).join('');
+    }
+
+    // Attach auto-save event listeners across Settings Tab
+    document.getElementById('tab-settings').addEventListener('input', autoSaveSettings);
+    document.getElementById('tab-settings').addEventListener('change', autoSaveSettings);
+
+    document.getElementById('currencySelect').addEventListener('change', (e) => {
+      document.getElementById('customCurrencyInput').style.display = (e.target.value === 'custom') ? 'block' : 'none';
+      autoSaveSettings();
     });
 
-    document.querySelectorAll('.day-chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('active')));
-    document.getElementById('paymentListContainer').addEventListener('click', (e) => { if(e.target.classList.contains('delete-btn')) { config.paymentMethods.splice(parseInt(e.target.dataset.index), 1); saveConfig(); loadSettingsToForm(); }});
-    document.getElementById('addPaymentBtn').addEventListener('click', () => { const v = document.getElementById('newPaymentInput').value.trim(); if(v) { config.paymentMethods.push(v); document.getElementById('newPaymentInput').value = ''; saveConfig(); loadSettingsToForm(); }});
-    document.getElementById('addBreakBtn').addEventListener('click', () => document.getElementById('breaksContainer').insertAdjacentHTML('beforeend', `<div class="break-item" data-id="${Date.now()}"><input type="time" class="break-start" value="12:00" style="padding: 6px; font-size: 14px; flex: 1;"><span style="color: var(--text-sub);">-</span><input type="time" class="break-end" value="13:00" style="padding: 6px; font-size: 14px; flex: 1;"><label class="switch" style="transform: scale(0.8); margin: 0 4px;"><input type="checkbox" class="break-enabled" checked><span class="slider"></span></label><button type="button" class="btn-danger remove-break" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">✕</button></div>`));
-    document.getElementById('breaksContainer').addEventListener('click', (e) => { if(e.target.classList.contains('remove-break')) e.target.closest('.break-item').remove(); });
-    
-    // Reset Logic
-    document.getElementById('resetTodayBtn').addEventListener('click', () => {
-      if(confirm(t('confirm_reset_today'))) {
-        expenses = expenses.filter(e => e.date !== getTodayKey()); saveExpenses();
-        slackData = { date: getTodayKey(), isSlacking: false, lastStartSec: 0, accumulatedSec: 0 }; localStorage.setItem('wtp_slack', JSON.stringify(slackData));
-        otData = { date: getTodayKey(), enabled: false }; localStorage.setItem('wtp_ot', JSON.stringify(otData));
-        document.getElementById('otToggle').checked = false; initSlackUI(); renderExpenseList(); alert('✅ Done!');
+    document.getElementById('otType').addEventListener('change', (e) => {
+      document.getElementById('otCustomRate').style.display = (e.target.value === 'custom') ? 'block' : 'none';
+      autoSaveSettings();
+    });
+
+    document.getElementById('salaryType').addEventListener('change', (e) => {
+      document.getElementById('monthlyConfigSection').style.display = e.target.value === 'monthly' ? 'block' : 'none';
+      autoSaveSettings();
+    });
+
+    document.querySelectorAll('.day-chip').forEach(c => c.addEventListener('click', () => {
+      c.classList.toggle('active');
+      autoSaveSettings();
+    }));
+
+    document.getElementById('paymentListContainer').addEventListener('click', (e) => {
+      if (e.target.classList.contains('delete-btn')) {
+        config.paymentMethods.splice(parseInt(e.target.dataset.index), 1);
+        renderPaymentListUI();
+        autoSaveSettings();
       }
     });
-    document.getElementById('clearDataBtn').addEventListener('click', () => { if(confirm(t('confirm_reset_all'))) { localStorage.clear(); location.reload(); }});
-    
+
+    document.getElementById('addPaymentBtn').addEventListener('click', () => {
+      const v = document.getElementById('newPaymentInput').value.trim();
+      if (v) {
+        config.paymentMethods.push(v);
+        document.getElementById('newPaymentInput').value = '';
+        renderPaymentListUI();
+        autoSaveSettings();
+      }
+    });
+
+    document.getElementById('addBreakBtn').addEventListener('click', () => {
+      document.getElementById('breaksContainer').insertAdjacentHTML('beforeend', `
+        <div class="break-item" data-id="${Date.now()}">
+          <input type="time" class="break-start" value="12:00" style="padding: 6px; font-size: 14px; flex: 1;">
+          <span style="color: var(--text-sub);">-</span>
+          <input type="time" class="break-end" value="13:00" style="padding: 6px; font-size: 14px; flex: 1;">
+          <label class="switch" style="transform: scale(0.8); margin: 0 4px;">
+            <input type="checkbox" class="break-enabled" checked>
+            <span class="slider"></span>
+          </label>
+          <button type="button" class="btn-danger remove-break" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">✕</button>
+        </div>
+      `);
+      autoSaveSettings();
+    });
+
+    document.getElementById('breaksContainer').addEventListener('click', (e) => {
+      if (e.target.classList.contains('remove-break')) {
+        e.target.closest('.break-item').remove();
+        autoSaveSettings();
+      }
+    });
+
+    // Reset Buttons
+    document.getElementById('resetTodayBtn').addEventListener('click', () => {
+      if (confirm(t('confirm_reset_today'))) {
+        expenses = expenses.filter(e => e.date !== getShiftDateKey());
+        saveExpenses();
+        slackData = { date: getShiftDateKey(), isSlacking: false, accumulatedSec: 0, lastTickMs: Date.now() };
+        localStorage.setItem('wtp_slack', JSON.stringify(slackData));
+        otData = { date: getShiftDateKey(), enabled: false };
+        localStorage.setItem('wtp_ot', JSON.stringify(otData));
+        document.getElementById('otToggle').checked = false;
+        initSlackUI();
+        renderExpenseList();
+        alert('✅ Done!');
+      }
+    });
+
+    document.getElementById('clearDataBtn').addEventListener('click', () => {
+      if (confirm(t('confirm_reset_all'))) {
+        localStorage.clear();
+        location.reload();
+      }
+    });
+
+    // Export CSV
+    document.getElementById('exportCsvBtn').addEventListener('click', () => {
+      if (expenses.length === 0) {
+        alert('No expenses to export.');
+        return;
+      }
+      let csv = "data:text/csv;charset=utf-8,\uFEFFDate,Time,Payment,Amount,Note\n";
+      expenses.forEach(i => {
+        csv += `"${i.date}","${i.time}","${i.payment}","${i.amount}","${i.note||''}"\n`;
+      });
+      const encoded = encodeURI(csv);
+      const a = document.createElement("a");
+      a.setAttribute("href", encoded);
+      a.setAttribute("download", `WorkTimePay_${getShiftDateKey()}.csv`);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+
+    // Tab Navigation
     document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      btn.classList.add('active'); document.getElementById(btn.dataset.tab).classList.add('active');
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
     }));
 
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(e => console.error(e))); }
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(e => console.error(e)));
+    }
 
-    applyLang(); loadSettingsToForm(); setInterval(tick, 30);
+    // Initialize App
+    applyLang();
+    loadSettingsToForm();
+    setInterval(tick, 30);
   </script>
 </body>
 </html>
